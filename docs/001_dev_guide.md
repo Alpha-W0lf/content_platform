@@ -4,13 +4,13 @@
 
 ### Phase 1: Project Structure and Initial Setup
 - [✓] Step 1: Create Core Directory Structure
-- [🚧] Step 2: Initialize Git
-- [ ] Step 3: Populate Initial Files (Backend - FastAPI)
-- [ ] Step 4: Populate Initial Files (Frontend - Next.js)
-- [ ] Step 5: Install Dependencies (Backend)
-- [ ] Step 6: Install Dependencies (Frontend)
-- [ ] Step 7: Initial Alembic Setup (Backend)
-- [ ] Step 8: Run and Test
+- [✓] Step 2: Initialize Git
+- [✓] Step 3: Populate Initial Files (Backend - FastAPI)
+- [✓] Step 4: Populate Initial Files (Frontend - Next.js)
+- [✓] Step 5: Install Dependencies (Backend)
+- [✓] Step 6: Install Dependencies (Frontend)
+- [✓] Step 7: Initial Alembic Setup (Backend)
+- [🚧] Step 8: Run and Test
 
 Okay, here's your precise, step-by-step guide for setting up the project structure, combining the directory creation with the initial task guidance. This incorporates everything we've discussed, making it your actionable development plan.
 

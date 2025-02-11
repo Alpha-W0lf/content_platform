@@ -1,0 +1,91 @@
+
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src/backend:/app
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - content-platform
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.celery
+    volumes:
+      - ./src/backend:/app
+    depends_on:
+      - api
+      - redis
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - content-platform
+
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: content_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - content-platform
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - content-platform
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    networks:
+      - content-platform
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./config/grafana:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    networks:
+      - content-platform
+
+networks:
+  content-platform:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
