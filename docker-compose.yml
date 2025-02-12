@@ -1,12 +1,11 @@
-
-
 services:
   api:
     build:
       context: .
       dockerfile: .docker/Dockerfile.api
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"  # Bind to all interfaces
+      - "0.0.0.0:5678:5678"  # Debug port
     volumes:
       - ./src/backend:/app
       - ./alembic.ini:/app/alembic.ini
@@ -63,7 +62,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - "0.0.0.0:9090:9090"  # Bind to all interfaces
     volumes:
       - ./config/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
@@ -73,7 +72,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - "0.0.0.0:3001:3000"  # Bind to all interfaces
     volumes:
       - ./config/grafana:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
@@ -85,9 +84,7 @@ services:
       context: .
       dockerfile: .docker/Dockerfile.frontend
     ports:
-      - "3000:3000"
-    volumes:
-      - ./src/frontend:/app
+      - "0.0.0.0:3000:3000"  # Bind to all interfaces
     depends_on:
       - api
     networks:

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { projectsApi, Project } from "@/lib/api";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -26,26 +27,29 @@ export default function ProjectsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Projects</h1>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-        >
-          Create New Project
-        </button>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <button
+            onClick={() => setIsCreating(true)}
+            className="rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Create New Project
+          </button>
+        </div>
       </div>
 
       {isCreating && (
         <form
           onSubmit={handleCreateProject}
-          className="bg-white shadow rounded-lg p-6 mb-8"
+          className="mb-8 rounded-lg bg-card p-6 shadow"
         >
           <div className="space-y-4">
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-foreground"
               >
                 Project Name
               </label>
@@ -54,14 +58,14 @@ export default function ProjectsPage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 required
               />
             </div>
             <div>
               <label
                 htmlFor="topic"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-foreground"
               >
                 Topic
               </label>
@@ -70,7 +74,7 @@ export default function ProjectsPage() {
                 id="topic"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 required
               />
             </div>
@@ -78,13 +82,13 @@ export default function ProjectsPage() {
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
               >
                 Create
               </button>
@@ -93,25 +97,25 @@ export default function ProjectsPage() {
         </form>
       )}
 
-      <div className="bg-white shadow rounded-lg">
-        <ul className="divide-y divide-gray-200">
+      <div className="rounded-lg bg-card shadow">
+        <ul className="divide-y divide-border">
           {projects.map((project) => (
             <li
               key={project.id}
-              className="p-4 hover:bg-gray-50 cursor-pointer"
+              className="cursor-pointer p-4 hover:bg-accent hover:text-accent-foreground"
               onClick={() => router.push(`/projects/${project.id}`)}
             >
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Topic: {project.topic}
                   </p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
+                  <span className="rounded-full bg-primary/10 px-2 py-1 text-sm text-primary">
                     {project.status}
                   </span>
                 </div>

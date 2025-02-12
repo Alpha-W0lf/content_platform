@@ -12,11 +12,15 @@ RUN apt-get update && apt-get install -y \
 COPY src/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install development dependencies
+RUN pip install debugpy
+
 # Copy the rest of the backend code
 COPY src/backend/ .
 
 # Copy alembic.ini
 COPY alembic.ini .
 
-# Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# For development mode with debugger
+ENV PYTHONPATH=/app
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

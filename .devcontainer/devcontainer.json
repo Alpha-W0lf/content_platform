@@ -1,0 +1,71 @@
+{
+    "name": "Content Platform Development",
+    "dockerComposeFile": ["../docker-compose.yml"],
+    "service": "api",
+    "workspaceFolder": "/app",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // Existing Python extensions
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.debugpy",
+                
+                // GitHub & AI Tools
+                "github.copilot",
+                "github.copilot-chat",
+                "github.vscode-github-actions",
+                "continue.continue",
+                "codium.codium",
+                "codeium.codeium",
+                "saoudrizwan.claude-dev",
+                
+                // Remote Development
+                "ms-vscode-remote.remote-containers",
+                "ms-vscode-remote.remote-ssh",
+                "ms-vscode-remote.remote-ssh-edit",
+                "ms-vscode-remote.remote-wsl",
+                "ms-vscode-remote.vscode-remote-extensionpack",
+                "ms-vscode.remote-explorer",
+                "ms-vscode.remote-server",
+                
+                // Data & Development
+                "ms-azuretools.vscode-docker",
+                "redhat.vscode-yaml",
+                "esbenp.prettier-vscode",
+                "dbaeumer.vscode-eslint",
+                "ritwickdey.liveserver",
+                "mechatroner.rainbow-csv",
+                "usernamehw.errorlens",
+                "rooveterinaryinc.roo-cline",
+                
+                // Jupyter
+                "ms-toolsai.jupyter",
+                "ms-toolsai.jupyter-keymap",
+                "ms-toolsai.jupyter-renderers",
+                "ms-toolsai.vscode-jupyter-cell-tags",
+                "ms-toolsai.vscode-jupyter-slideshow",
+                
+                // Windows AI Studio (if needed)
+                "ms-windows-ai-studio.windows-ai-studio"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.formatting.provider": "black",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": true
+                },
+                "github.copilot.enable": {
+                    "*": true,
+                    "yaml": true,
+                    "plaintext": true,
+                    "markdown": true
+                }
+            }
+        }
+    },
+    "remoteUser": "root",
+    "postCreateCommand": "pip install black isort pylint"
+}

@@ -7,9 +7,20 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user
+RUN useradd -m celery_user
+
 COPY src/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/backend/ .
 
-CMD ["celery", "-A", "tasks.project_tasks:celery", "worker", "--loglevel=info"]
+# Set ownership and permissions
+RUN chown -R celery_user:celery_user /app
+
+ENV PYTHONPATH=/app
+
+# Switch to non-root user
+USER celery_user
+
+CMD ["celery", "-A", "tasks.project_tasks", "worker", "--loglevel=info"]

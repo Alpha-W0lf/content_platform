@@ -4,6 +4,7 @@ from api.routers import projects
 from core.config import settings
 from core.database import engine
 from models.project import Base
+from prometheus_fastapi_instrumentator import Instrumentator
 import logging
 
 # Configure logging
@@ -13,16 +14,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize Prometheus instrumentator first
+instrumentator = Instrumentator()
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.API_VERSION
 )
 
-# Configure CORS
+# Instrument the app with Prometheus metrics before any other middleware
+instrumentator.instrument(app).expose(app)
+
+# Configure CORS - Allow any origin in development, adjust for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js frontend
+    allow_origins=["*"],  # In production, replace with specific domains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
