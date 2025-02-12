@@ -6,7 +6,7 @@
   "author": "Tom Wolf",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix src/backend\" \"npm run dev --prefix src/frontend\"",
+    "dev": "concurrently \"uvicorn src.backend.main:app --reload --host 0.0.0.0 --port 8000\" \"npm run dev --prefix src/frontend\"",
     "start": "docker-compose up --build",
     "start:detached": "docker-compose up -d --build",
     "stop": "docker-compose down",
