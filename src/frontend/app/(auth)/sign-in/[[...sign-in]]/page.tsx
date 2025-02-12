@@ -1,5 +1,5 @@
 import { SignIn } from "@clerk/nextjs";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "../../../../components/theme-toggle";
 
 export default function Page() {
   return (

@@ -1,7 +1,7 @@
 import { UserButton } from "@clerk/nextjs";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "../components/theme-toggle";
 import Link from "next/link";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "../components/ui/card";
 
 export default function Home() {
   return (
@@ -15,24 +15,24 @@ export default function Home() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Projects</h2>
-            <Link
-              href="/projects"
-              className="rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              View All Projects
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Create and manage your content projects. Each project can contain
-            multiple assets including scripts, narrations, videos, and more.
-          </p>
-        </CardContent>
-      </Card>
+          <CardHeader>
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Projects</h2>
+              <Link
+                href="/projects"
+                className="rounded bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                View All Projects
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Create and manage your content projects. Each project can contain
+              multiple assets including scripts, narrations, videos, and more.
+            </p>
+          </CardContent>
+        </Card>
     </div>
   );
 }

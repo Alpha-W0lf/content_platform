@@ -12,6 +12,7 @@ COPY src/frontend .
 # Ensure environment variables are set for production build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Add this for build time!
 ENV NEXT_PUBLIC_API_URL=http://api:8000
 
 # Clean and build
@@ -33,6 +34,7 @@ COPY --from=builder /app/tailwind.config.js ./tailwind.config.js
 # Set production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Still include it here.
 ENV NEXT_PUBLIC_API_URL=http://api:8000
 
 # Install only production dependencies
