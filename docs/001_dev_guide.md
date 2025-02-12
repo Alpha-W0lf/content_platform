@@ -9,8 +9,9 @@
 - [✓] Step 4: Populate Initial Files (Frontend - Next.js)
 - [✓] Step 5: Install Dependencies (Backend)
 - [✓] Step 6: Install Dependencies (Frontend)
-- [✓] Step 7: Initial Alembic Setup (Backend)
-- [🚧] Step 8: Run and Test
+- [✓] Step 7: Install shadcn/ui components (Note: Calendar component failed to install)
+- [✓] Step 8: Initial Alembic Setup (Backend)
+- [✓] Step 9: Run and Test
 
 Okay, here's your precise, step-by-step guide for setting up the project structure, combining the directory creation with the initial task guidance. This incorporates everything we've discussed, making it your actionable development plan.
 
