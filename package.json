@@ -4,7 +4,7 @@
   "private": true,
   "description": "AI-powered content creation platform for YouTube and other platforms.",
   "author": "Tom Wolf",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix src/backend\" \"npm run dev --prefix src/frontend\"",
     "start": "docker-compose up --build",
