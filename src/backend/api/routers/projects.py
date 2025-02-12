@@ -48,3 +48,14 @@ async def list_projects(
     result = await db.execute(select(Project))
     projects = result.scalars().all()
     return projects
+
+# Add get project by id endpoint
+@router.get("/{project_id}", response_model=ProjectSchema)
+async def get_project(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    project = await db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project

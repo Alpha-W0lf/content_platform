@@ -1,4 +1,3 @@
-// src/frontend/app/projects/[projectId]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,13 +7,15 @@ import { Card, CardHeader, CardContent } from "../../../components/ui/card";
 import { notFound } from 'next/navigation';
 import { Project as ProjectSchema } from "../../../types";
 
-interface PageProps { //KEEP THIS INTERFACE
+// --- Corrected Interface ---
+interface PageProps {
     params: {
-        projectId: string;
+        projectId: string; // This MUST be a string
     };
 }
+// --------------------------
 
-export default function ProjectDetailPage({ params }: PageProps) { //KEEP USING THIS INTERFACE
+export default function ProjectDetailPage({ params }: PageProps) { // Use the corrected interface
     const [project, setProject] = useState<ProjectSchema | null>(null);
     const [status, setStatus] = useState<string>("");
     const [loading, setLoading] = useState(true);
