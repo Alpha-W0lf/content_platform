@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { projectsApi, Project } from '@/lib/api';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { projectsApi, Project } from "@/lib/api";
 
 export default function ProjectsPage() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
-  const [topic, setTopic] = useState('');
-  const [name, setName] = useState('');
+  const [topic, setTopic] = useState("");
+  const [name, setName] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -16,11 +16,11 @@ export default function ProjectsPage() {
     try {
       const project = await projectsApi.create({ name, topic });
       setProjects([...projects, project]);
-      setTopic('');
-      setName('');
+      setTopic("");
+      setName("");
       setIsCreating(false);
     } catch (error) {
-      console.error('Failed to create project:', error);
+      console.error("Failed to create project:", error);
     }
   };
 
@@ -37,10 +37,16 @@ export default function ProjectsPage() {
       </div>
 
       {isCreating && (
-        <form onSubmit={handleCreateProject} className="bg-white shadow rounded-lg p-6 mb-8">
+        <form
+          onSubmit={handleCreateProject}
+          className="bg-white shadow rounded-lg p-6 mb-8"
+        >
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Project Name
               </label>
               <input
@@ -53,7 +59,10 @@ export default function ProjectsPage() {
               />
             </div>
             <div>
-              <label htmlFor="topic" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="topic"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Topic
               </label>
               <input
@@ -94,8 +103,12 @@ export default function ProjectsPage() {
             >
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                  <p className="text-sm text-gray-500">Topic: {project.topic}</p>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {project.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Topic: {project.topic}
+                  </p>
                 </div>
                 <div className="flex items-center space-x-4">
                   <span className="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">

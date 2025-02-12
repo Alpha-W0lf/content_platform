@@ -80,6 +80,19 @@ services:
     networks:
       - content-platform
 
+  frontend:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/frontend:/app
+    depends_on:
+      - api
+    networks:
+      - content-platform
+
 networks:
   content-platform:
     driver: bridge

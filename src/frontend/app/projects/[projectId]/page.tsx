@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { projectsApi, Project } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { projectsApi, Project } from "@/lib/api";
 
 export default function ProjectDetailPage({
   params: { projectId },
@@ -9,7 +9,7 @@ export default function ProjectDetailPage({
   params: { projectId: string };
 }) {
   const [project, setProject] = useState<Project | null>(null);
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -17,7 +17,7 @@ export default function ProjectDetailPage({
         const { status } = await projectsApi.getStatus(projectId);
         setStatus(status);
       } catch (error) {
-        console.error('Failed to fetch project status:', error);
+        console.error("Failed to fetch project status:", error);
       }
     };
 
