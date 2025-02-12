@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  async rewrites() { // Add this rewrites configuration
+  async rewrites() {
     return [
       {
         source: '/projects/:path*',

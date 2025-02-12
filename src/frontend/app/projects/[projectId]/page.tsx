@@ -5,69 +5,64 @@ import { projectsApi } from "../../../lib/api";
 import { ThemeToggle } from "../../../components/theme-toggle";
 import { Card, CardHeader, CardContent } from "../../../components/ui/card";
 import { notFound } from 'next/navigation';
-import { Project as ProjectSchema } from "../../../types";
+import { Project as ProjectSchema } from "../../../types/index";
 
-// --- Corrected Interface ---
+// Corrected Interface:  params MUST be strings.
 interface PageProps {
     params: {
-        projectId: string; // This MUST be a string
+        projectId: string;
     };
 }
-// --------------------------
 
-export default function ProjectDetailPage({ params }: PageProps) { // Use the corrected interface
+export default function ProjectDetailPage({ params }: PageProps) {
     const [project, setProject] = useState<ProjectSchema | null>(null);
     const [status, setStatus] = useState<string>("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);  // Add a loading state
+    const [error, setError] = useState<string | null>(null); // Add error state
 
     useEffect(() => {
         const fetchProject = async () => {
-            setLoading(true);
-            setError(null);
+          setLoading(true);
+          setError(null); //clear previous errors
+
             try {
                 const projectData = await projectsApi.getProject(params.projectId);
 
                 if (!projectData) {
-                  notFound(); // Correctly use the notFound function
+                  notFound();
                 }
 
                 setProject(projectData);
                 setStatus(projectData.status);
-
-            } catch (err: any) { // Use 'any' to handle different error types
+            } catch (err: any) {
                 console.error("Failed to fetch project:", err);
-                setError(err.message || "Failed to load project."); // Set a user-friendly error message
-
+                setError(err.message || "Failed to load project."); // Use a generic message if err.message is missing
             } finally {
-                setLoading(false);
+              setLoading(false); // Set loading to false in all cases
             }
         };
-        // Fetch the initial project status
+
         fetchProject();
 
-
         const pollStatus = setInterval(() => {
-        projectsApi.getStatus(params.projectId)
-            .then((data: any) => setStatus(data.status))
-            .catch((err: any) => console.error("Failed to fetch project status:", err));
-        }, 5000); // Good practice: Poll every 5 seconds
+            projectsApi.getStatus(params.projectId)
+            .then(data => setStatus(data.status)) // No need for :any, the types are correct.
+            .catch(err => console.error("Failed to fetch project status:", err));
+        }, 5000);
 
-        // Clean up the interval when the component unmounts
         return () => clearInterval(pollStatus);
-    }, [params.projectId]);  // Correct dependency array
-
+    }, [params.projectId]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div>Loading...</div>; // Show loading indicator
     }
 
     if (error) {
-        return <div>Error: {error}</div>;
+      return <div>Error: {error}</div>; // Show error message
     }
 
     if (!project) {
-        return <div>Project not found</div>;  // This is a good fallback
+        return <div>Project not found.</div>; // Redundant, but good for clarity
     }
 
     return (
