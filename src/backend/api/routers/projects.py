@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 from core.database import get_db
 from models.project import Project
@@ -44,6 +45,6 @@ async def get_project_status(
 async def list_projects(
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(Project.__table__.select())
-    projects = result.fetchall()
+    result = await db.execute(select(Project))
+    projects = result.scalars().all()
     return projects

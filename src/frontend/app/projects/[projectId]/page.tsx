@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { projectsApi, Project } from "@/lib/api";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 export default function ProjectDetailPage({
   params: { projectId },
@@ -15,10 +16,11 @@ export default function ProjectDetailPage({
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const { status } = await projectsApi.getStatus(projectId);
-        setStatus(status);
+        const projectData = await projectsApi.getProject(projectId);
+        setProject(projectData);
+        setStatus(projectData.status);
       } catch (error) {
-        console.error("Failed to fetch project status:", error);
+        console.error("Failed to fetch project details:", error);
       }
     };
 
@@ -30,36 +32,39 @@ export default function ProjectDetailPage({
 
   return (
     <div className="container mx-auto py-8">
-      <div className="rounded-lg bg-card p-6 shadow">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Project Details</h1>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
-              {status}
-            </span>
-          </div>
-        </div>
-
-        {project && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-medium">Name</h2>
-              <p className="text-muted-foreground">{project.name}</p>
-            </div>
-            <div>
-              <h2 className="text-lg font-medium">Topic</h2>
-              <p className="text-muted-foreground">{project.topic}</p>
-            </div>
-            <div>
-              <h2 className="text-lg font-medium">Created At</h2>
-              <p className="text-muted-foreground">
-                {new Date(project.created_at).toLocaleString()}
-              </p>
+      <Card>
+        <CardHeader>
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Project Details</h1>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
+                {status}
+              </span>
             </div>
           </div>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent>
+          {project && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-medium">Name</h2>
+                <p className="text-muted-foreground">{project.name}</p>
+              </div>
+              <div>
+                <h2 className="text-lg font-medium">Topic</h2>
+                <p className="text-muted-foreground">{project.topic}</p>
+              </div>
+              <div>
+                <h2 className="text-lg font-medium">Created At</h2>
+                <p className="text-muted-foreground">
+                  {new Date(project.created_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

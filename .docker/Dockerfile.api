@@ -9,18 +9,18 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY src/backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY src/backend/requirements.txt /app/src/backend/requirements.txt
+RUN pip install --no-cache-dir -r /app/src/backend/requirements.txt
 
 # Install development dependencies
 RUN pip install debugpy
 
-# Copy the rest of the backend code
-COPY src/backend/ .
+# Copy the backend code
+COPY src /app/src
 
-# Copy alembic.ini
-COPY alembic.ini .
+# Copy alembic.ini to root
+COPY alembic.ini /app/alembic.ini
 
 # For development mode with debugger
 ENV PYTHONPATH=/app
-CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
