@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { projectsApi } from "../../../lib/api";
-import { ThemeToggle } from "../../../components/theme-toggle";
+import { projectsApi } from "../../../lib/api"; // Correct relative import
+import { ThemeToggle } from "../../../components/theme-toggle"; // Correct relative import
 import { Card, CardHeader, CardContent } from "../../../components/ui/card";
 import { notFound } from 'next/navigation';
-import { Project as ProjectSchema } from "../../../types/index";
+import type { Project } from "../../../types"; // Import Project
 
 // Corrected Interface:  params MUST be strings.
 interface PageProps {
@@ -15,31 +15,30 @@ interface PageProps {
 }
 
 export default function ProjectDetailPage({ params }: PageProps) {
-    const [project, setProject] = useState<ProjectSchema | null>(null);
-    const [status, setStatus] = useState<string>("");
-    const [loading, setLoading] = useState(true);  // Add a loading state
+    const [project, setProject] = useState<Project | null>(null); // Use the correct type here
+    const [status, setStatus] = useState<string>(""); // and a separate state for status
+    const [loading, setLoading] = useState(true);  // Add a loading state!
     const [error, setError] = useState<string | null>(null); // Add error state
+
 
     useEffect(() => {
         const fetchProject = async () => {
-          setLoading(true);
-          setError(null); //clear previous errors
+            setLoading(true); // Set loading to true before the API call
+            setError(null);   //Reset error
 
             try {
                 const projectData = await projectsApi.getProject(params.projectId);
-
-                if (!projectData) {
-                  notFound();
-                }
-
-                setProject(projectData);
-                setStatus(projectData.status);
-            } catch (err: any) {
+                 if (!projectData) {
+                    notFound(); //this is correct
+                  }
+                  setProject(projectData);
+                  setStatus(projectData.status);
+            } catch (err: any) {  //  Use 'any' to handle different error types
                 console.error("Failed to fetch project:", err);
-                setError(err.message || "Failed to load project."); // Use a generic message if err.message is missing
-            } finally {
-              setLoading(false); // Set loading to false in all cases
-            }
+                setError(err.message || "Failed to load project."); // Use generic message
+              } finally {
+                  setLoading(false); // Always set loading to false, even on error
+              }
         };
 
         fetchProject();
@@ -50,8 +49,9 @@ export default function ProjectDetailPage({ params }: PageProps) {
             .catch(err => console.error("Failed to fetch project status:", err));
         }, 5000);
 
-        return () => clearInterval(pollStatus);
-    }, [params.projectId]);
+        return () => clearInterval(pollStatus); // Clean up the interval!
+    }, [params.projectId]);  // Correct dependency array
+
 
     if (loading) {
         return <div>Loading...</div>; // Show loading indicator
@@ -62,7 +62,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
     }
 
     if (!project) {
-        return <div>Project not found.</div>; // Redundant, but good for clarity
+        return <div>Project not found</div>; // Redundant, but good for clarity
     }
 
     return (
