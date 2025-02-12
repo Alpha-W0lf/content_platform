@@ -15,21 +15,21 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-@router.post("/", response_model=ProjectSchema)
+@router.post("/", response_model=ProjectSchema)  # Return the full schema
 async def create_project(
-    project: ProjectCreate,
+    project_create: ProjectCreate,
     db: AsyncSession = Depends(get_db)
 ):
     # Create project with just the topic, name will be set later
     db_project = Project(
-        topic=project.topic,
-        notes=project.notes,
+        topic=project_create.topic,
+        notes=project_create.notes,
         status="CREATED"
     )
     db.add(db_project)
     await db.commit()
     await db.refresh(db_project)
-    return db_project
+    return db_project #return the full db_project
 
 @router.get("/{project_id}/status", response_model=ProjectStatus)
 async def get_project_status(
