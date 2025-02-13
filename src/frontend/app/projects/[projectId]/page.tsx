@@ -1,17 +1,18 @@
 // src/frontend/app/projects/[projectId]/page.tsx
-import { Metadata } from 'next';
+import { Suspense } from "react";
+import { auth } from "@clerk/nextjs/server";
+import ProjectDetails from "@/components/project-details";
 
-export async function generateMetadata({ params }: { params: { projectId: string } }): Promise<Metadata> {
-    return {
-        title: `Project ${params.projectId}`,
-    }
-}
+export default async function ProjectPage({ params }: { params: { projectId: string } }) {
+  const { userId } = await auth();
 
-export default async function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
-  const { projectId } = await params;
+  if (!userId) {
+    return null; // Or your preferred handling
+  }
+
   return (
-    <div>
-      <h1>Project ID: {projectId}</h1>
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProjectDetails projectId={params.projectId} />
+    </Suspense>
   );
 }
