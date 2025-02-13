@@ -5,6 +5,8 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY src/frontend/package*.json ./
 RUN npm install
+RUN npm install --save-dev autoprefixer && npm install next-themes lucide-react @types/react@latest @types/react-dom@latest
+
 
 # Copy the rest of the frontend code
 COPY src/frontend .
@@ -17,6 +19,8 @@ ENV NEXT_PUBLIC_API_URL=http://api:8000
 
 # Clean and build
 RUN rm -rf .next
+RUN rm -rf .next/cache
+
 RUN npm run build
 
 # --- Runtime Stage ---

@@ -14,7 +14,12 @@
     "test:e2e": "echo \"To be implemented: End-to-end tests\" && exit 1"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.20",
     "concurrently": "^8.2.2",
     "prettier-plugin-tailwindcss": "^0.6.11"
+  },
+  "dependencies": {
+    "lucide-react": "^0.475.0",
+    "next-themes": "^0.4.4"
   }
 }
