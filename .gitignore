@@ -8,13 +8,13 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
+/build/  # Changed to only ignore build at root level
+/dist/   # Changed to only ignore dist at root level
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/  # Changed to only ignore lib at root level
 lib64/
 parts/
 sdist/
