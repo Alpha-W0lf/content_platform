@@ -236,6 +236,48 @@ Playwright (and AI-Powered Browser Use): Essential for interacting with websites
 
 Specialized APIs: Leverage APIs for tasks like stock photo search, machine translation, voice synthesis, and video analysis.
 
+## Updated Approach for Image and Video Generation
+
+### Image Generation
+
+- **Current Plan**: Use the Google Gemini API to utilize Imagen 3 for image generation.
+- **Future Plan**: Implement an abstraction layer to allow for easy switching between different image generation APIs/models. This will be facilitated by an `ImageGenerator` interface and a factory pattern (`get_image_generator`).
+
+### Video Clip Generation
+
+- **Current Plan**: Tentatively plan to use the Google Gemini API for image-to-video clip generation (pending access).
+- **Future Plan**: Design the system to accommodate other video generation APIs as they become available. This will be facilitated by a `VideoClipGenerator` interface and a factory pattern (`get_video_clip_generator`).
+
+### API/Model Switching
+
+- **Implementation**: Add an abstraction layer for both image and video generation to support easy switching between APIs/models. This will include:
+  - `ImageGenerator` interface
+  - `VideoClipGenerator` interface
+  - Factory patterns (`get_image_generator`, `get_video_clip_generator`)
+
+### Testing
+
+- **API Integration Testing**: Ensure robust testing of API integrations, including error handling, rate limiting, and cost considerations.
+- **Mock Generators**: Use `MockImageGenerator` and `MockVideoClipGenerator` for testing without making real API calls.
+
+### Monitoring
+
+- **API Usage Metrics**: Track the following metrics for each API provider:
+  - API call counts
+  - API call latency
+  - API error rates
+  - API costs (if possible to track programmatically)
+
+### Key Technologies
+
+- **Remove**: Stable Diffusion, AnimateDiff
+- **Add**: Google Gemini API
+
+### Future Features
+
+- **Support for Additional APIs**: Explicitly list support for additional image/video generation APIs as a future feature.
+- **Local Model Fallback**: Consider adding local model fallback as a potential future feature if API access becomes a persistent issue or if costs are prohibitive.
+
 Prioritization:
 
 It's important to prioritize these enhancements based on their impact and feasibility. Here's a suggested order:
