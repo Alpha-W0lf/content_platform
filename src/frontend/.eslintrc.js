@@ -11,7 +11,8 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { 'vars': 'all', 'args': 'after-used', 'ignoreRestSiblings': true }],
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'error'
+    '@typescript-eslint/no-explicit-any': 'error',
+    'react/prop-types': 'off' // Disable prop-types since we use TypeScript
   },
   settings: {
     react: {

@@ -2,48 +2,57 @@
 FROM node:18 AS builder
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy configuration files first
 COPY src/frontend/package*.json ./
-RUN npm install
-RUN npm install --save-dev autoprefixer && npm install next-themes lucide-react @types/react@18.3.18 @types/react-dom@18.3.5
+COPY src/frontend/tsconfig.json ./
+COPY src/frontend/postcss.config.js ./
+COPY src/frontend/tailwind.config.js ./
+COPY src/frontend/next.config.js ./
+COPY src/frontend/.eslintrc.js ./
+COPY src/frontend/components.json ./
 
+# Install dependencies with exact versions
+RUN npm ci
 
-# Copy the rest of the frontend code
-COPY src/frontend .
+# Create public directory first
+RUN mkdir -p ./public
 
-# Ensure environment variables are set for production build
+# Copy source code
+COPY src/frontend/app ./app
+COPY src/frontend/components ./components
+COPY src/frontend/lib ./lib
+COPY src/frontend/styles ./styles
+COPY src/frontend/types ./types
+COPY src/frontend/public/. ./public/
+
+# Set build environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-# Add this for build time!
 ENV NEXT_PUBLIC_API_URL=http://api:8000
 
-# Clean and build
-RUN rm -rf .next
-RUN rm -rf .next/cache
-
+# Build the application
 RUN npm run build
 
 # --- Runtime Stage ---
 FROM node:18-slim
 WORKDIR /app
 
-# Copy only necessary files from builder
+# Copy package files and install only production dependencies
+COPY --from=builder /app/package*.json ./
+RUN npm ci --only=production
+
+# Copy built application and necessary files
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.js ./next.config.js
-COPY --from=builder /app/postcss.config.js ./postcss.config.js
-COPY --from=builder /app/tailwind.config.js ./tailwind.config.js
+COPY --from=builder /app/package.json ./package.json
 
-# Set production environment
+# Set runtime environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-# Still include it here.
 ENV NEXT_PUBLIC_API_URL=http://api:8000
-
-# Install only production dependencies
-RUN npm install --only=production
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Use node directly instead of npm for better container signals handling
+CMD ["node", "node_modules/.bin/next", "start"]

@@ -12,9 +12,10 @@ interface PageProps {
     params: {
         projectId: string;
     };
+    searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default function ProjectDetailPage({ params }: PageProps) {
+export default async function ProjectPage({ params, searchParams }: PageProps) {
     const [project, setProject] = useState<Project | null>(null); // Use the correct type here
     const [status, setStatus] = useState<string>(""); // and a separate state for status
     const [loading, setLoading] = useState(true);  // Add a loading state!
@@ -33,12 +34,12 @@ export default function ProjectDetailPage({ params }: PageProps) {
                   }
                   setProject(projectData);
                   setStatus(projectData.status);
-            } catch (err: any) {  //  Use 'any' to handle different error types
+            } catch (err: Error | unknown) {
                 console.error("Failed to fetch project:", err);
-                setError(err.message || "Failed to load project."); // Use generic message
-              } finally {
-                  setLoading(false); // Always set loading to false, even on error
-              }
+                setError(err instanceof Error ? err.message : "An unknown error occurred");
+            } finally {
+                setLoading(false); // Always set loading to false, even on error
+            }
         };
 
         fetchProject();
