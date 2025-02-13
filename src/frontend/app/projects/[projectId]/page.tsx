@@ -1,4 +1,3 @@
-// src/frontend/app/projects/[projectId]/page.tsx
 import { Suspense } from "react";
 import { auth } from "@clerk/nextjs/server";
 import ProjectDetails from "@/components/project-details";
