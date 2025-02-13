@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY src/frontend/package*.json ./
 RUN npm install
-RUN npm install --save-dev autoprefixer && npm install next-themes lucide-react @types/react@latest @types/react-dom@latest
+RUN npm install --save-dev autoprefixer && npm install next-themes lucide-react @types/react@18.3.18 @types/react-dom@18.3.5
 
 
 # Copy the rest of the frontend code
