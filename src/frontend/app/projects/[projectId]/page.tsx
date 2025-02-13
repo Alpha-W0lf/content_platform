@@ -1,19 +1,17 @@
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import { auth } from "@clerk/nextjs/server";
-import ProjectDetails from "@/components/project-details";
+import ProjectDetails from "../../../components/project-details";
 
-export default function ProjectPage({
+export default async function ProjectPage({
   params
 }: {
   params: { projectId: string }
 }) {
-  // Ensure user is authenticated
-  useEffect(() => {
-    async function authenticate() {
-      await auth();
-    }
-    authenticate();
-  }, []);
+  const { userId } = await auth();
+
+  if (!userId) {
+    return null;
+  }
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
