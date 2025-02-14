@@ -1,8 +1,25 @@
 # --- Build Stage ---
-FROM node:18.17.0 AS builder
+FROM node:18.17.0-slim AS builder
 WORKDIR /app
 
-# Copy configuration files first
+# Add curl for healthchecks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set build environment variables
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG CLERK_SECRET_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
+    CLERK_SECRET_KEY=${CLERK_SECRET_KEY} \
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in \
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up \
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/ \
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/ \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=development \
+    NEXT_PUBLIC_API_URL=http://api:8000
+
+# Copy only necessary files for package installation
 COPY src/frontend/package*.json ./
 COPY src/frontend/tsconfig*.json ./
 COPY src/frontend/postcss.config.js ./
@@ -10,11 +27,8 @@ COPY src/frontend/tailwind.config.js ./
 COPY src/frontend/next.config.js ./
 COPY src/frontend/components.json ./
 
-# Clean install dependencies with exact versions
-RUN npm clean-install
-
-# Create necessary directories
-RUN mkdir -p ./public
+# Install dependencies with specific flags for better security and smaller size
+RUN npm clean-install --no-optional --ignore-scripts
 
 # Copy source code
 COPY src/frontend/app ./app
@@ -23,42 +37,51 @@ COPY src/frontend/lib ./lib
 COPY src/frontend/styles ./styles
 COPY src/frontend/types ./types
 COPY src/frontend/middleware.ts ./
-COPY src/frontend/public/. ./public/
-
-# Set build environment variables
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-ENV NEXT_PUBLIC_API_URL=http://api:8000
+COPY src/frontend/public ./public
 
 # Build the application
+ENV NODE_ENV=production
 RUN npm run build
 
 # --- Runtime Stage ---
 FROM node:18.17.0-slim
 WORKDIR /app
 
-# Copy package files and install only production dependencies
-COPY --from=builder /app/package*.json ./
-RUN npm clean-install --omit=dev
+# Add curl for healthchecks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy built application and necessary files
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./next.config.js
-COPY --from=builder /app/package.json ./package.json
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    chown -R nextjs:nodejs /app
+
+# Copy only production artifacts
+COPY --from=builder --chown=nextjs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./
+
+# Install production dependencies only
+ENV NODE_ENV=production
+RUN npm clean-install --omit=dev --no-optional --ignore-scripts
 
 # Set runtime environment variables
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
+    CLERK_SECRET_KEY=${CLERK_SECRET_KEY} \
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in \
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up \
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/ \
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/ \
+    NEXT_PUBLIC_API_URL=http://api:8000
 
-# These will be overridden by docker-compose, but setting defaults here
-ENV NEXT_PUBLIC_API_URL=http://api:8000
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
-ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
-ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+USER nextjs
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/ || exit 1
 
 CMD ["node", "node_modules/.bin/next", "start"]

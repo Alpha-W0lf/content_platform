@@ -1,26 +1,44 @@
 FROM python:3.11-slim
 
+# Create non-root user
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 appuser --ingroup appgroup
+
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies and curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY src/backend/requirements.txt /app/src/backend/requirements.txt
-RUN pip install --no-cache-dir -r /app/src/backend/requirements.txt
 
-# Install development dependencies
-RUN pip install debugpy
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/src/backend/requirements.txt && \
+    pip install --no-cache-dir debugpy
 
-# Copy the backend code
+# Copy application code
 COPY src /app/src
-
-# Copy alembic.ini to root
 COPY alembic.ini /app/alembic.ini
 
-# For development mode with debugger
-ENV PYTHONPATH=/app
+# Set permissions
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Set Python path
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1
+
+# Expose ports
+EXPOSE 8000 5678
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Start with debugger in development mode
 CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

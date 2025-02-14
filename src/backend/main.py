@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import projects
-from core.config import settings
-from core.database import engine
-from models.project import Base
+from src.backend.api.routers import projects
+from src.backend.core.config import settings
+from src.backend.core.database import engine
+from src.backend.models.project import Base
 from prometheus_fastapi_instrumentator import Instrumentator
 import logging
 

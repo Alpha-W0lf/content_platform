@@ -19,6 +19,13 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
   celery_worker:
     build:
@@ -36,6 +43,13 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD", "celery", "-A", "src.backend.tasks", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
   postgres:
     image: postgres:15
@@ -45,10 +59,18 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: content_platform
+      PGUSER: user
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d content_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
 
   redis:
     image: redis:7
@@ -58,6 +80,13 @@ services:
       - redis_data:/data
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
@@ -68,6 +97,13 @@ services:
       - prometheus_data:/prometheus
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
@@ -78,11 +114,21 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
   frontend:
     build:
       context: .
       dockerfile: .docker/Dockerfile.frontend
+      args:
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
     ports:
       - "0.0.0.0:3000:3000"  # Bind to all interfaces
     environment:
@@ -97,6 +143,13 @@ services:
       - api
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
 networks:
   content-platform:
