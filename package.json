@@ -10,16 +10,16 @@
     "start": "docker-compose up --build",
     "start:detached": "docker-compose up -d --build",
     "stop": "docker-compose down",
-    "test": "echo \"Error: no test specified at the root level\" && exit 1",
-    "test:e2e": "echo \"To be implemented: End-to-end tests\" && exit 1"
+    "test": "pytest src/backend/tests",
+    "test:e2e": "cypress run",
+    "format": "prettier --write \"src/frontend/**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "frontend:install": "cd src/frontend && npm install"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.20",
     "concurrently": "^8.2.2",
     "prettier-plugin-tailwindcss": "^0.6.11"
   },
   "dependencies": {
-    "lucide-react": "^0.475.0",
     "next-themes": "^0.4.4"
   }
 }

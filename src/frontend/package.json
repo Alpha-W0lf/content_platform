@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.17.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "concurrently \"uvicorn src.backend.main:app --reload --host 0.0.0.0 --port 8000\" \"npm run dev --prefix src/frontend\"",
     "start": "docker-compose up --build",
@@ -12,11 +16,10 @@
     "test:e2e": "echo \"To be implemented: End-to-end tests\" && exit 1",
     "format": "prettier --write .",
     "build": "next build",
-    "lint": "next lint",
-    "postinstall": "npx shadcn-ui@latest init"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^4.29.10",
+    "@clerk/nextjs": "^6.11.3",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-aspect-ratio": "^1.0.3",
@@ -50,9 +53,9 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.1",
-    "date-fns": "^2.31.0",
+    "date-fns": "^2.30.0",
     "lucide-react": "^0.375.0",
-    "next": "14.2.1",
+    "next": "14.2.24",
     "next-themes": "^0.2.1",
     "react": "18.2.0",
     "react-day-picker": "^8.10.0",

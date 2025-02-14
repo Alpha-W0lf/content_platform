@@ -2,6 +2,7 @@ import { UserButton } from "@clerk/nextjs";
 import { ThemeToggle } from "../components/theme-toggle";
 import Link from "next/link";
 import { Card, CardHeader, CardContent } from "../components/ui/card";
+import { Button } from "@/components/ui/button"
 
 export default function Home() {
   return (
@@ -33,6 +34,15 @@ export default function Home() {
             </p>
           </CardContent>
         </Card>
+
+      <div className="flex gap-4 mt-8">
+        <Button>Default Button</Button>
+        <Button variant="destructive">Destructive Button</Button>
+        <Button variant="outline">Outline Button</Button>
+        <Button variant="secondary">Secondary Button</Button>
+        <Button variant="ghost">Ghost Button</Button>
+        <Button variant="link">Link Button</Button>
+      </div>
     </div>
   );
 }

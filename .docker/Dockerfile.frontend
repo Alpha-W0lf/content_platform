@@ -1,20 +1,19 @@
 # --- Build Stage ---
-FROM node:18 AS builder
+FROM node:18.17.0 AS builder
 WORKDIR /app
 
 # Copy configuration files first
 COPY src/frontend/package*.json ./
-COPY src/frontend/tsconfig.json ./
+COPY src/frontend/tsconfig*.json ./
 COPY src/frontend/postcss.config.js ./
 COPY src/frontend/tailwind.config.js ./
 COPY src/frontend/next.config.js ./
-COPY src/frontend/.eslintrc.js ./
 COPY src/frontend/components.json ./
 
-# Install dependencies with exact versions
-RUN npm ci
+# Clean install dependencies with exact versions
+RUN npm clean-install
 
-# Create public directory first
+# Create necessary directories
 RUN mkdir -p ./public
 
 # Copy source code
@@ -23,6 +22,7 @@ COPY src/frontend/components ./components
 COPY src/frontend/lib ./lib
 COPY src/frontend/styles ./styles
 COPY src/frontend/types ./types
+COPY src/frontend/middleware.ts ./
 COPY src/frontend/public/. ./public/
 
 # Set build environment variables
@@ -34,12 +34,12 @@ ENV NEXT_PUBLIC_API_URL=http://api:8000
 RUN npm run build
 
 # --- Runtime Stage ---
-FROM node:18-slim
+FROM node:18.17.0-slim
 WORKDIR /app
 
 # Copy package files and install only production dependencies
 COPY --from=builder /app/package*.json ./
-RUN npm ci --only=production
+RUN npm clean-install --omit=dev
 
 # Copy built application and necessary files
 COPY --from=builder /app/.next ./.next
@@ -50,9 +50,15 @@ COPY --from=builder /app/package.json ./package.json
 # Set runtime environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# These will be overridden by docker-compose, but setting defaults here
 ENV NEXT_PUBLIC_API_URL=http://api:8000
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 
 EXPOSE 3000
 
-# Use node directly instead of npm for better container signals handling
 CMD ["node", "node_modules/.bin/next", "start"]
