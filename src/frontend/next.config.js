@@ -25,7 +25,7 @@ const nextConfig = {
       },
       {
         source: '/health',
-        destination: `${apiUrl}/health`,
+        destination: '/api/health',  // Point to our Next.js health endpoint
       },
     ];
   },
