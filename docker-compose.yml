@@ -126,6 +126,13 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile.frontend
+      args:
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        - NEXT_PUBLIC_CLERK_SIGN_IN_URL
+        - NEXT_PUBLIC_CLERK_SIGN_UP_URL
+        - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
+        - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
+        - NEXT_PUBLIC_API_URL=http://api:8000
     ports:
       - "0.0.0.0:3000:3000"  # Bind to all interfaces
     env_file:

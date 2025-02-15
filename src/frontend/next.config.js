@@ -17,14 +17,15 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:8000';
     return [
       {
         source: '/projects/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/projects/:path*`,
+        destination: `${apiUrl}/projects/:path*`,
       },
       {
         source: '/health',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/health`,
+        destination: `${apiUrl}/health`,
       },
     ];
   },

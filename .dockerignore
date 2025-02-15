@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/dist
+**/*.tsbuildinfo
+
+# Version control
+.git
+.gitignore
+
+# Development files
+.vscode
+coverage
+**/__pycache__
+*.pyc
+
+# Python specific
+.venv
+venv
+*.egg-info
+.pytest_cache
+.coverage
+htmlcov/
+
+# Environment (but allow example)
+.env*
+!.env.example
+
+# OS files
+.DS_Store
+**/.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation
+*.md
+!README.md
+
+# Editor/IDE specific
+.idea
+*.swp
+*.swo
