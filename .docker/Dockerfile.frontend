@@ -6,19 +6,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Set build environment variables
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ARG CLERK_SECRET_KEY
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
-    CLERK_SECRET_KEY=${CLERK_SECRET_KEY} \
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in \
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up \
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/ \
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/ \
-    NEXT_TELEMETRY_DISABLED=1 \
-    NODE_ENV=development \
-    NEXT_PUBLIC_API_URL=http://api:8000
-
 # Copy only necessary files for package installation
 COPY src/frontend/package*.json ./
 COPY src/frontend/tsconfig*.json ./
@@ -40,7 +27,7 @@ COPY src/frontend/middleware.ts ./
 COPY src/frontend/public ./public
 
 # Build the application
-ENV NODE_ENV=production
+ARG NODE_ENV=production
 RUN npm run build
 
 # --- Runtime Stage ---
@@ -63,19 +50,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./
 
 # Install production dependencies only
-ENV NODE_ENV=production
+ARG NODE_ENV=production
 RUN npm clean-install --omit=dev --no-optional --ignore-scripts
-
-# Set runtime environment variables
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
-    CLERK_SECRET_KEY=${CLERK_SECRET_KEY} \
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in \
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up \
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/ \
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/ \
-    NEXT_PUBLIC_API_URL=http://api:8000
 
 USER nextjs
 
