@@ -2,7 +2,7 @@
 Pytest fixtures for backend tests.
 """
 import pytest
-import pytest_asyncio
+import asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -26,8 +26,18 @@ TestSessionLocal = sessionmaker(
     class_=AsyncSession
 )
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
-async def setup_test_db():
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
+@pytest.fixture(scope="session")
+async def _setup_test_db():
     """Create test database objects and clean up after tests"""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -38,9 +48,9 @@ async def setup_test_db():
         await conn.run_sync(Base.metadata.drop_all)
     await test_engine.dispose()
 
-@pytest_asyncio.fixture(scope="function")
-async def setup_database():
-    """Create fresh tables before each test and clean up after"""
+@pytest.fixture(autouse=True)
+async def setup_database(_setup_test_db):
+    """Create fresh tables before each test"""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -50,27 +60,22 @@ async def setup_database():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-@pytest_asyncio.fixture
-async def db_session() -> AsyncSession:
+@pytest.fixture
+async def db_session(setup_database) -> AsyncSession:
     """Get a test database session"""
-    session = TestSessionLocal()
-    try:
-        yield session
-    finally:
-        await session.close()
+    async with TestSessionLocal() as session:
+        try:
+            yield session
+            await session.rollback()
+        finally:
+            await session.close()
 
-@pytest_asyncio.fixture
-async def client() -> AsyncClient:
+@pytest.fixture
+async def client(db_session: AsyncSession) -> AsyncClient:
     """Get a test client for making API requests"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        yield client
-
-@pytest_asyncio.fixture(autouse=True)
-async def override_dependencies(db_session: AsyncSession):
-    """Override database dependency for testing"""
-    async def override_get_db():
-        yield db_session
-    
-    app.dependency_overrides[get_db] = override_get_db
-    yield
-    app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = lambda: db_session
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        try:
+            yield ac
+        finally:
+            app.dependency_overrides.clear()

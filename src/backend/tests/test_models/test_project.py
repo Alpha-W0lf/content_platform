@@ -5,6 +5,7 @@ from src.backend.models.project import Project
 @pytest.mark.asyncio
 async def test_create_project(db_session):
     """Test creating a project in the test database"""
+    db_session = await db_session
     # Create a test project
     project = Project(
         topic="Test Project",
