@@ -13,6 +13,7 @@ async def test_create_project(db_session):
     
     # Add to session and commit
     db_session.add(project)
+    await db_session.flush()  # Flush to generate the ID
     await db_session.commit()
     await db_session.refresh(project)
     
