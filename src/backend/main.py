@@ -1,48 +1,38 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+
 from src.backend.api.routers import projects
 from src.backend.core.config import settings
-from src.backend.core.database import engine
-from src.backend.models.project import Base
-from prometheus_fastapi_instrumentator import Instrumentator
-import logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
-# Initialize Prometheus instrumentator first
-instrumentator = Instrumentator()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    Instrumentator().instrument(app).expose(app)
+    yield
+    # Shutdown
 
-# Create FastAPI app
+
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.API_VERSION
+    title=settings.PROJECT_NAME, version=settings.API_VERSION, lifespan=lifespan
 )
 
-# Instrument the app with Prometheus metrics before any other middleware
-instrumentator.instrument(app).expose(app)
-
-# Configure CORS - Allow any origin in development, adjust for production
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific domains
+    allow_origins=["*"],  # TODO: Configure this properly for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
-app.include_router(projects.router)
+app.include_router(projects.router, prefix="/api/v1", tags=["projects"])
 
-@app.on_event("startup")
-async def startup_event():
-    # We'll let Alembic handle database migrations
-    logger.info("Application starting up")
 
 @app.get("/health")
 async def health_check():
-    return {"status": "OK"}
+    return {"status": "healthy"}

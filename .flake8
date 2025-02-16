@@ -1,0 +1,11 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503
+# Allow longer lines in docstrings
+max-doc-length = 120
+per-file-ignores =
+    # Ignore docstring related warnings in tests
+    tests/*: D100,D101,D102,D103
+import-order-style = google
+application-import-names = src
+exclude = .git,__pycache__,build,dist,*.egg-info,.venv

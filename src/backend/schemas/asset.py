@@ -1,14 +1,18 @@
-from pydantic import BaseModel, UUID4
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import UUID4, BaseModel
+
 
 class AssetBase(BaseModel):
     asset_type: str
     path: str
     approved: Optional[bool] = False
 
+
 class AssetCreate(AssetBase):
     project_id: UUID4
+
 
 class Asset(AssetBase):
     id: UUID4

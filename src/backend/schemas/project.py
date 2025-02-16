@@ -1,7 +1,9 @@
-from pydantic import BaseModel, UUID4
-from typing import Optional
 from datetime import datetime
 from enum import Enum
+from typing import Optional
+
+from pydantic import UUID4, BaseModel
+
 
 class ProjectStatus(str, Enum):
     CREATED = "CREATED"
@@ -9,20 +11,25 @@ class ProjectStatus(str, Enum):
     COMPLETED = "COMPLETED"
     ERROR = "ERROR"
 
+
 class ProjectBase(BaseModel):
     topic: str
     notes: Optional[str] = None
 
+
 class ProjectCreate(ProjectBase):
     pass
 
+
 class ProjectStatusResponse(BaseModel):
     status: ProjectStatus
+
 
 class ProjectUpdate(BaseModel):
     topic: Optional[str] = None
     notes: Optional[str] = None
     status: Optional[ProjectStatus] = None
+
 
 class Project(ProjectBase):
     id: UUID4
