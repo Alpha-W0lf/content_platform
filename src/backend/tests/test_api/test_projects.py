@@ -11,7 +11,7 @@ async def test_create_project(client: AsyncClient, db_session: AsyncSession):
     """Test successful project creation"""
     data = ProjectCreate(topic="Test Topic", notes="Test Notes").model_dump()
     response = await client.post("/projects/", json=data)
-    
+
     assert response.status_code == 200
     project = response.json()
     assert project["topic"] == "Test Topic"
@@ -44,7 +44,7 @@ async def test_get_project_status(client: AsyncClient, db_session: AsyncSession)
     """Test getting project status"""
     # Create a project first
     project = Project(topic="Test Topic", notes="Test Notes", status="CREATED")
-    db_session.add(project)
+    await db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
 
@@ -67,7 +67,7 @@ async def test_get_project(client: AsyncClient, db_session: AsyncSession):
     """Test getting a project by ID"""
     # Create a project first
     project = Project(topic="Test Topic", notes="Test Notes", status="CREATED")
-    db_session.add(project)
+    await db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
 
@@ -101,7 +101,7 @@ async def test_list_projects(client: AsyncClient, db_session: AsyncSession):
     # Create a few projects
     project1 = Project(topic="Topic 1", notes="Notes 1", status="CREATED")
     project2 = Project(topic="Topic 2", notes="Notes 2", status="PROCESSING")
-    db_session.add_all([project1, project2])
+    await db_session.add_all([project1, project2])
     await db_session.commit()
 
     # Get the list of projects
@@ -121,7 +121,7 @@ async def test_update_project(client: AsyncClient, db_session: AsyncSession):
     """Test updating a project's fields"""
     # Create initial project
     project = Project(topic="Original Topic", notes="Original Notes", status=ProjectStatus.CREATED)
-    db_session.add(project)
+    await db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
     
@@ -142,7 +142,7 @@ async def test_update_project(client: AsyncClient, db_session: AsyncSession):
 async def test_update_project_status(client: AsyncClient, db_session: AsyncSession):
     """Test updating a project's status"""
     project = Project(topic="Status Update Test", status=ProjectStatus.CREATED)
-    db_session.add(project)
+    await db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
     
@@ -175,7 +175,7 @@ async def test_update_project_not_found(client: AsyncClient):
 async def test_update_project_invalid_status(client: AsyncClient, db_session: AsyncSession):
     """Test updating a project with an invalid status"""
     project = Project(topic="Invalid Status Test", status=ProjectStatus.CREATED)
-    db_session.add(project)
+    await db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
     
