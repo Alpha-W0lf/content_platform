@@ -8,7 +8,6 @@ from src.backend.main import app
 from src.backend.core.config import settings
 from src.backend.models import Base
 from src.backend.core.database import get_db
-from contextlib import asynccontextmanager
 
 # Create test engine using settings
 test_engine = create_async_engine(
@@ -51,21 +50,17 @@ async def setup_database(_setup_test_db):
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-@pytest.fixture
-async def db_session() -> AsyncSession:
+@pytest.fixture(scope="function")
+async def db_session():
     """Get a test database session"""
     async with TestSessionLocal() as session:
         yield session
+        await session.rollback()
 
-@pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncClient:
+@pytest.fixture(scope="function")
+async def client(db_session: AsyncSession):
     """Get a test client for making API requests"""
-    @asynccontextmanager
-    async def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client_instance = AsyncClient(app=app, base_url="http://test")
-    yield client_instance
-    await client_instance.aclose()
-    app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = lambda: db_session
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+        app.dependency_overrides.clear()
