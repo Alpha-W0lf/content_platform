@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -23,6 +24,10 @@ RUN pip install --no-cache-dir -r /app/src/backend/requirements.txt && \
 # Copy application code
 COPY src /app/src
 COPY alembic.ini /app/alembic.ini
+
+# Make the startup script executable
+COPY src/backend/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Set permissions
 RUN chown -R appuser:appgroup /app
@@ -40,5 +45,5 @@ EXPOSE 8000 5678
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Start with debugger in development mode
-CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use the startup script instead of direct command
+CMD ["/app/start.sh"]

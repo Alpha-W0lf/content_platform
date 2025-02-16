@@ -1,6 +1,13 @@
 from pydantic import BaseModel, UUID4
 from typing import Optional
 from datetime import datetime
+from enum import Enum
+
+class ProjectStatus(str, Enum):
+    CREATED = "CREATED"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
 
 class ProjectBase(BaseModel):
     topic: str
@@ -9,13 +16,18 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     pass
 
-class ProjectStatus(BaseModel):
-    status: str
+class ProjectStatusResponse(BaseModel):
+    status: ProjectStatus
+
+class ProjectUpdate(BaseModel):
+    topic: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[ProjectStatus] = None
 
 class Project(ProjectBase):
     id: UUID4
     name: Optional[str] = None  # Name will be set later from script processing
-    status: str
+    status: ProjectStatus
     created_at: datetime
     updated_at: datetime
 

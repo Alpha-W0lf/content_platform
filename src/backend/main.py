@@ -40,10 +40,8 @@ app.include_router(projects.router)
 
 @app.on_event("startup")
 async def startup_event():
-    # Create database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created")
+    # We'll let Alembic handle database migrations
+    logger.info("Application starting up")
 
 @app.get("/health")
 async def health_check():

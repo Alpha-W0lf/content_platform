@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 from .base import Base
+from src.backend.schemas.project import ProjectStatus
 from .asset import Asset  # Import Asset model
 
 class Project(Base):
@@ -11,7 +12,7 @@ class Project(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=True)
-    status = Column(SQLEnum("CREATED", "PROCESSING", "COMPLETED", "ERROR", name="project_status"))
+    status = Column(SQLEnum(ProjectStatus), nullable=False, default=ProjectStatus.CREATED)
     topic = Column(String, nullable=False)
     notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

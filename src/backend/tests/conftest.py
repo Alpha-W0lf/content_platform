@@ -2,14 +2,14 @@
 Pytest fixtures for backend tests.
 """
 import pytest
-import asyncio
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from src.backend.main import app
 from src.backend.core.config import settings
 from src.backend.models import Base
 from src.backend.core.database import get_db
+from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 
 # Create test engine using settings
 test_engine = create_async_engine(
@@ -20,21 +20,13 @@ test_engine = create_async_engine(
     max_overflow=0
 )
 
-TestSessionLocal = sessionmaker(
-    bind=test_engine,
+TestSessionLocal = async_sessionmaker(
+    test_engine,
+    class_=AsyncSession,
     expire_on_commit=False,
-    class_=AsyncSession
+    autocommit=False,
+    autoflush=False,
 )
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 @pytest.fixture(scope="session")
 async def _setup_test_db():
@@ -61,21 +53,28 @@ async def setup_database(_setup_test_db):
         await conn.run_sync(Base.metadata.drop_all)
 
 @pytest.fixture
-async def db_session(setup_database) -> AsyncSession:
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a test database session"""
-    async with TestSessionLocal() as session:
-        try:
+    @asynccontextmanager
+    async def get_test_db_session():
+        async with TestSessionLocal() as session:
             yield session
-            await session.rollback()
-        finally:
-            await session.close()
+
+    async for session in get_test_db_session():
+        yield session
 
 @pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncClient:
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Get a test client for making API requests"""
-    app.dependency_overrides[get_db] = lambda: db_session
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        try:
+    @asynccontextmanager
+    async def get_test_client():
+        async def override_get_db():
+            yield db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+        async with AsyncClient(app=app, base_url="http://test") as ac:
             yield ac
-        finally:
-            app.dependency_overrides.clear()
+        app.dependency_overrides.clear()
+
+    async for ac in get_test_client():
+        yield ac
