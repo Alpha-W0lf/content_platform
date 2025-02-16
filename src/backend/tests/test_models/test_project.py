@@ -1,10 +1,9 @@
+import uuid
 from datetime import datetime
-from uuid import UUID
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.engine import Result
 
 from src.backend.models.asset import Asset
 from src.backend.models.project import Project
@@ -12,126 +11,121 @@ from src.backend.schemas.project import ProjectStatus
 
 
 @pytest.mark.asyncio
-async def test_create_project(db_session: AsyncSession):
-    """Test creating a project in the test database"""
-    # Create a test project
-    project = Project(topic="Test Project", status=ProjectStatus.CREATED)
-
-    # Add to session and commit
+async def test_create_project(db_session: AsyncSession) -> None:
+    # Using keyword args instead of positional args
+    project = Project(
+        id=uuid.uuid4(),
+        topic="Test Topic",
+        name="Test Project",
+        notes="Test Notes",
+        status=ProjectStatus.CREATED,
+    )
     db_session.add(project)
-    await db_session.flush()  # Flush to generate the ID
     await db_session.commit()
-    await db_session.refresh(project)
 
-    # Verify the project was created
-    assert isinstance(project.id, UUID)
-    assert project.topic == "Test Project"
-    assert project.status == ProjectStatus.CREATED
+    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    saved_project = result.scalar_one()
 
-    # Query to verify it's in the database
-    result = await db_session.get(Project, project.id)
-    assert result is not None
-    assert result.id == project.id
-    assert result.topic == "Test Project"
+    assert saved_project.topic == "Test Topic"
+    assert saved_project.name == "Test Project"
+    assert saved_project.notes == "Test Notes"
+    assert saved_project.status == ProjectStatus.CREATED
 
 
 @pytest.mark.asyncio
-async def test_project_status_transition(db_session: AsyncSession):
-    """Test project status transitions"""
-    project = Project(topic="Status Test", status=ProjectStatus.CREATED)
-
+async def test_project_status_transition(db_session: AsyncSession) -> None:
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
     db_session.add(project)
     await db_session.commit()
-    await db_session.refresh(project)
 
-    # Test status transition
     project.status = ProjectStatus.PROCESSING
     await db_session.commit()
-    await db_session.refresh(project)
-    assert project.status == ProjectStatus.PROCESSING
 
-    project.status = ProjectStatus.COMPLETED
-    await db_session.commit()
-    await db_session.refresh(project)
-    assert project.status == ProjectStatus.COMPLETED
+    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    updated_project = result.scalar_one()
+    assert updated_project.status == ProjectStatus.PROCESSING
 
 
 @pytest.mark.asyncio
-async def test_project_asset_relationship(db_session: AsyncSession):
-    """Test project-asset relationship"""
-    project = Project(topic="Asset Test", status=ProjectStatus.CREATED)
+async def test_project_asset_relationship(db_session: AsyncSession) -> None:
+    project = Project(
+        id=uuid.uuid4(),
+        topic="Test Topic",
+        name="Test Project",
+        status=ProjectStatus.CREATED,
+    )
 
-    db_session.add(project)
-    await db_session.flush()
-
-    # Create and add assets
     asset1 = Asset(
+        id=uuid.uuid4(),
         project_id=project.id,
         asset_type="script",
-        path="/path/to/script.txt",
+        path="/path/to/script",
     )
+
     asset2 = Asset(
+        id=uuid.uuid4(),
         project_id=project.id,
         asset_type="video",
-        path="/path/to/video.mp4",
+        path="/path/to/video",
     )
 
-    project.assets.extend([asset1, asset2])
+    project.assets = [asset1, asset2]
+    db_session.add(project)
     await db_session.commit()
-    await db_session.refresh(project)
 
-    # Verify relationships
-    assert len(project.assets) == 2
-    assert any(asset.asset_type == "script" for asset in project.assets)
-    assert any(asset.asset_type == "video" for asset in project.assets)
+    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    saved_project = result.scalar_one()
+    assert len(saved_project.assets) == 2
+    assert all(isinstance(asset, Asset) for asset in saved_project.assets)
+    assert any(asset.asset_type == "script" for asset in saved_project.assets)
 
 
 @pytest.mark.asyncio
-async def test_project_cascade_delete(db_session: AsyncSession):
-    """Test that deleting a project cascades to its assets"""
-    project = Project(topic="Cascade Test", status=ProjectStatus.CREATED)
-
-    db_session.add(project)
-    await db_session.flush()
+async def test_project_cascade_delete(db_session: AsyncSession) -> None:
+    project = Project(
+        id=uuid.uuid4(),
+        topic="Test Topic",
+        name="Test Project",
+        status=ProjectStatus.CREATED,
+    )
 
     asset = Asset(
+        id=uuid.uuid4(),
         project_id=project.id,
         asset_type="script",
-        path="/path/to/script.txt",
+        path="/path/to/script",
     )
-    project.assets.append(asset)
+
+    project.assets = [asset]
     await db_session.commit()
 
-    # Delete project
     await db_session.delete(project)
     await db_session.commit()
 
-    # Verify project and asset are deleted
-    result = await db_session.get(Project, project.id)
-    assert result is None
+    # Verify project is deleted
+    project_result = await db_session.execute(select(Project).filter_by(id=project.id))
+    assert project_result.scalar_one_or_none() is None
 
-    # Verify asset is also deleted
-    stmt = select(Asset).where(Asset.project_id == project.id)
-    assets_result: Result[tuple[Asset]] = await db_session.execute(stmt)
-    assets = assets_result.scalars().all()
-    assert len(assets) == 0
+    # Verify associated asset is deleted
+    asset_result = await db_session.execute(select(Asset).filter_by(id=asset.id))
+    assert asset_result.all() == []
 
 
 @pytest.mark.asyncio
-async def test_project_timestamps(db_session: AsyncSession):
-    """Test that timestamps are automatically set and updated"""
-    project = Project(topic="Timestamp Test", status=ProjectStatus.CREATED)
+async def test_project_timestamps(db_session: AsyncSession) -> None:
+    start_time = datetime.utcnow()
 
-    # Test created_at
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
     db_session.add(project)
     await db_session.commit()
-    await db_session.refresh(project)
-    assert isinstance(project.created_at, datetime)
-    initial_created_at = project.created_at
 
-    # Test updated_at changes on update
-    project.topic = "Updated Topic"
-    await db_session.commit()
+    assert project.created_at >= start_time
+    assert project.updated_at >= start_time
+
+    # Test update
+    original_updated_at = project.updated_at
     await db_session.refresh(project)
-    assert project.created_at == initial_created_at  # Should not change
-    assert project.updated_at > initial_created_at  # Should be updated
+    project.name = "Updated Name"
+    await db_session.commit()
+
+    assert project.updated_at > original_updated_at

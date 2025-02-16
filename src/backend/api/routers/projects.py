@@ -1,71 +1,81 @@
+import uuid
 from typing import List
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.core.database import get_db
 from src.backend.models.project import Project
-from src.backend.schemas.project import Project as ProjectSchema
 from src.backend.schemas.project import (
     ProjectCreate,
-    ProjectStatusResponse,
+    ProjectRead,
+    ProjectStatus,
     ProjectUpdate,
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-@router.post("/", response_model=ProjectSchema)
+@router.post("/", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
 async def create_project(
-    project_create: ProjectCreate, db: AsyncSession = Depends(get_db)
-):
-    project = Project(**project_create.model_dump())
-    db.add(project)
+    project: ProjectCreate, db: AsyncSession = Depends(get_db)
+) -> ProjectRead:
+    db_project = Project(
+        id=uuid.uuid4(),
+        topic=project.topic,
+        name=project.name,
+        notes=project.notes,
+        status=ProjectStatus.CREATED,
+    )
+    db.add(db_project)
     await db.commit()
-    await db.refresh(project)
-    return project  # Return the Project object, FastAPI will use the response_model
+    await db.refresh(db_project)
+    return ProjectRead.model_validate(db_project)
 
 
-@router.get("/{project_id}/status", response_model=ProjectStatusResponse)
-async def get_status(project_id: UUID, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if project is None:
+@router.get("/{project_id}/status", response_model=ProjectStatus)
+async def get_status(
+    project_id: str, db: AsyncSession = Depends(get_db)
+) -> ProjectStatus:
+    result = await db.execute(select(Project).filter(Project.id == project_id))
+    db_project = result.scalar_one_or_none()
+    if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
-    return ProjectStatusResponse(
-        status=project.status
-    )  # Return a ProjectStatusResponse object
+    return db_project.status
 
 
-@router.get("/{project_id}", response_model=ProjectSchema)
-async def get_project(project_id: UUID, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if project is None:
+@router.get("/{project_id}", response_model=ProjectRead)
+async def get_project(
+    project_id: str, db: AsyncSession = Depends(get_db)
+) -> ProjectRead:
+    result = await db.execute(select(Project).filter(Project.id == project_id))
+    db_project = result.scalar_one_or_none()
+    if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
-    return project  # Return the Project object
+    return ProjectRead.model_validate(db_project)
 
 
-@router.get("/", response_model=List[ProjectSchema])
-async def list_projects(db: AsyncSession = Depends(get_db)):
-    query = select(Project)
-    result = await db.execute(query)
+@router.get("/", response_model=List[ProjectRead])
+async def list_projects(db: AsyncSession = Depends(get_db)) -> List[ProjectRead]:
+    result = await db.execute(select(Project))
     projects = result.scalars().all()
-    return projects
+    return [ProjectRead.model_validate(p) for p in projects]
 
 
-@router.patch("/{project_id}", response_model=ProjectSchema)
+@router.patch("/{project_id}", response_model=ProjectRead)
 async def update_project(
-    project_id: UUID, project_update: ProjectUpdate, db: AsyncSession = Depends(get_db)
-):
-    project = await db.get(Project, project_id)
-    if project is None:
+    project_id: str, project_update: ProjectUpdate, db: AsyncSession = Depends(get_db)
+) -> ProjectRead:
+    result = await db.execute(select(Project).filter(Project.id == project_id))
+    db_project = result.scalar_one_or_none()
+    if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
 
     update_data = project_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(project, field, value)
+        setattr(db_project, field, value)
 
     await db.commit()
-    await db.refresh(project)
-    return project
+    await db.refresh(db_project)
+    return ProjectRead.model_validate(db_project)

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://user:password@postgres:5432/content_platform"
     )
-    TEST_DATABASE_URL: Optional[str] = None
+    TEST_DATABASE_URL: str = Field(default="")  # Will be set by validator
     REDIS_URL: Optional[str] = None
     CELERY_BROKER_URL: str = Field(default="redis://redis:6379/0")
     CELERY_RESULT_BACKEND: str = Field(default="redis://redis:6379/0")

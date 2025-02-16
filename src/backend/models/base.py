@@ -1,3 +1,9 @@
-from sqlalchemy.orm import declarative_base
+from typing import Any, Dict, Type
 
-Base = declarative_base()
+from sqlalchemy.orm import DeclarativeBase
+
+
+class Base(DeclarativeBase):
+    """Base class for all SQLAlchemy models with proper typing support."""
+
+    type_annotation_map: Dict[Type[Any], Any] = {}
