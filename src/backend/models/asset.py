@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
-from .project import Base
+from .base import Base
 
 class Asset(Base):
     __tablename__ = "assets"
