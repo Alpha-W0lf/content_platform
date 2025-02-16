@@ -1,3 +1,5 @@
+# All tasks completed for this guide.
+
 user prompt:
 i am currently working on getting the docker frontend build to work correctly. the frontend build seems to work fine locally, but when attempting with docker, it is having trouble. seems like something to do with a typescript problem in this file: src/frontend/app/projects/[projectId]/page.tsx
 

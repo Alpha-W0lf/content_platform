@@ -1,3 +1,5 @@
+# All tasks completed for this guide.
+
 # Progress Tracker
 
 - [x] ThemeProvider Setup

@@ -1,3 +1,7 @@
+# All tasks completed for this guide.
+
+**Note:** This document reflects the development setup. It includes a reminder (TODO in `src/backend/main.py`) for configuring CORS properly for production, which is a crucial security step.
+
 To enable your server-client setup, we need to modify a few things:
 
 First, let's update the docker-compose.yml to bind to all interfaces instead of just localhost:

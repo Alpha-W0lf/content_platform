@@ -1,3 +1,5 @@
+# All tasks completed for this guide.
+
 user prompt:
 should we keep the package.json file in the root directory? should we make any changes to it? is it causing problems for us?
 

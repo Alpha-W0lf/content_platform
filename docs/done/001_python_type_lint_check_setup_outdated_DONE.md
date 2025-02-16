@@ -1,3 +1,5 @@
+# All tasks completed for this guide.
+
 Below is a step-by-step guide to set up a robust Python workflow that includes type checking, linting, formatting, and pre-commit hooks. You can use **mypy** (a static type checker) alongside **Pylance** (which uses Pyright for real‑time type checking in VS Code) without conflict—they serve complementary roles. Pylance gives you immediate feedback in the editor, while mypy can be run in your CI pipeline or pre-commit hooks for an extra layer of verification.
 
 ---
