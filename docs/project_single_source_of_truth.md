@@ -66,24 +66,24 @@ def process_project(project_id: UUID):
     try:
         # Update project status
         update_project_status(project_id, "PROCESSING")
-        
+
         # Create project record
         try:
             project = create_project_record(project_id)
         except Exception as e:
             log_error("Project creation failed", e, project_id)
             raise
-            
+
         # Set initial status
         try:
             update_project_status(project_id, "CREATED")
         except Exception as e:
             log_error("Status update failed", e, project_id)
             raise
-            
+
         # Success - update final status
         update_project_status(project_id, "COMPLETED")
-        
+
     except Exception:
         # Any unhandled exception updates status to ERROR
         update_project_status(project_id, "ERROR")
@@ -1313,7 +1313,7 @@ Analytics Performance Configuration:
    - Brand metrics: 2GB cache
    - Learning data: 1GB cache
    - System metrics: 1GB cache
-   
+
    Performance Limits:
    - Max 50,000 series per brand
    - Max 1,000,000 points per brand

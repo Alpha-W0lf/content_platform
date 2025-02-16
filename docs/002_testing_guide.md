@@ -141,9 +141,9 @@ async def _setup_test_db():
     """Create test database objects and clean up after tests"""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield
-    
+
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await test_engine.dispose()
@@ -154,9 +154,9 @@ async def setup_database(_setup_test_db):
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield
-    
+
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
@@ -337,7 +337,7 @@ class Settings(BaseSettings):
     CLERK_SECRET_KEY: Optional[str] = None
     HEYGEN_API_KEY: Optional[str] = None
     REDIS_URL: Optional[str] = None
-    
+
     model_config = SettingsConfigDict(env_file=".env")
 
     @field_validator('TEST_DATABASE_URL', mode='before')

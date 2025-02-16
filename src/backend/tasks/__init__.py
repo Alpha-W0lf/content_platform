@@ -1,3 +1,4 @@
+# mypy: disable-error-code="import-untyped"
 from celery import Celery
 
 celery = Celery("content_platform", include=["src.backend.tasks.project_tasks"])

@@ -4,6 +4,7 @@ from uuid import UUID
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.engine import Result
 
 from src.backend.models.asset import Asset
 from src.backend.models.project import Project
@@ -111,8 +112,8 @@ async def test_project_cascade_delete(db_session: AsyncSession):
 
     # Verify asset is also deleted
     stmt = select(Asset).where(Asset.project_id == project.id)
-    result = await db_session.execute(stmt)
-    assets = result.scalars().all()
+    assets_result: Result[tuple[Asset]] = await db_session.execute(stmt)
+    assets = assets_result.scalars().all()
     assert len(assets) == 0
 
 

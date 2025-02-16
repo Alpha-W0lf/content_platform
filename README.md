@@ -83,6 +83,6 @@ npm test
 
 ## License
 
-This is proprietary software. All rights reserved. 
+This is proprietary software. All rights reserved.
 
 This software and its source code are confidential and proprietary. No part of this software may be used, copied, distributed, or modified without explicit written permission from the copyright holder.

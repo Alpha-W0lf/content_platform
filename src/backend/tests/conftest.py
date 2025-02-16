@@ -1,6 +1,7 @@
 """
 Pytest fixtures for backend tests.
 """
+
 from typing import AsyncGenerator
 
 import pytest

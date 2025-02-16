@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import UUID4, BaseModel
+from pydantic import BaseModel, UUID4
 
 
 class AssetBase(BaseModel):

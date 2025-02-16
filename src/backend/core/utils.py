@@ -2,10 +2,11 @@
 Utility functions for the backend.
 These functions provide common functionality across different parts of the application.
 """
-import json
-import uuid
+
 from datetime import datetime
 from typing import Any, Dict, Optional
+import json
+import uuid
 
 
 def generate_uuid() -> str:

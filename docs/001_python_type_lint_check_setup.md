@@ -120,10 +120,10 @@ pre-commit install
 
 ## 4. VS Code Integration
 
-- **Python Extension & Pylance:**  
+- **Python Extension & Pylance:**
   Install the official Python extension and Pylance from the VS Code marketplace. Pylance will provide on-the-fly type checking using Pyright.
 
-- **Configure VS Code Settings:**  
+- **Configure VS Code Settings:**
   In your `settings.json` (via Preferences > Settings > Open Settings (JSON)), add:
 
   ```json
@@ -142,19 +142,19 @@ pre-commit install
 
 ## 5. Running the Tools
 
-- **Run mypy manually:**  
+- **Run mypy manually:**
   ```bash
   mypy .
   ```
-- **Run flake8 manually:**  
+- **Run flake8 manually:**
   ```bash
   flake8 .
   ```
-- **Format code with Black:**  
+- **Format code with Black:**
   ```bash
   black .
   ```
-- **Sort imports with isort:**  
+- **Sort imports with isort:**
   ```bash
   isort .
   ```
@@ -166,7 +166,7 @@ pre-commit install
 They complement each other:
 - **Pylance** gives you real‑time, in-editor type checking and IntelliSense powered by Pyright.
 - **mypy** can be run as part of your CI pipeline or pre-commit hooks to enforce stricter type checking.
-  
+
 They may occasionally report slightly different issues due to differences in type inference, but they do not conflict.
 
 ---
