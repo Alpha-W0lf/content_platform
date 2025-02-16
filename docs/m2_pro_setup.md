@@ -1,12 +1,22 @@
-step 1:
+# Setting up the development environment
+
+## Step 1: Python Environment Setup
+
+```bash
 cd src/backend
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
+```
 
-step 2:
-# From the root directory
+## Step 2: Pre-commit Setup
+
+From the root directory:
+```bash
 pre-commit install
+```
 
-run this script:
-m2_pro_config.sh
+## Step 3: Run Configuration Script
+
+```bash
+./m2_pro_config.sh
