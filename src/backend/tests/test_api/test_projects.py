@@ -1,6 +1,7 @@
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,13 +12,16 @@ from src.backend.schemas.project import ProjectCreate, ProjectStatus
 @pytest.mark.asyncio
 async def test_create_project(client: AsyncClient, db_session: AsyncSession):
     """Test successful project creation"""
-    data = ProjectCreate(topic="Test Topic", notes="Test Notes").model_dump()
+    data = ProjectCreate(
+        topic="Test Topic", notes="Test Notes", name="Test Name"
+    ).model_dump()
     response = await client.post("/projects/", json=data)
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_201_CREATED
     project = response.json()
     assert project["topic"] == "Test Topic"
     assert project["notes"] == "Test Notes"
+    assert project["name"] == "Test Name"
     assert project["status"] == "CREATED"
     assert "id" in project
     assert isinstance(UUID(project["id"]), UUID)  # Ensure ID is a valid UUID
@@ -26,6 +30,7 @@ async def test_create_project(client: AsyncClient, db_session: AsyncSession):
     retrieved_project = await db_session.get(Project, UUID(project["id"]))
     assert retrieved_project is not None
     assert retrieved_project.topic == "Test Topic"
+    assert retrieved_project.name == "Test Name"
 
 
 @pytest.mark.asyncio
