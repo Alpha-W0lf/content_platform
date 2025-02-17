@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import select
@@ -113,7 +113,7 @@ async def test_project_cascade_delete(db_session: AsyncSession) -> None:
 
 @pytest.mark.asyncio
 async def test_project_timestamps(db_session: AsyncSession) -> None:
-    start_time = datetime.utcnow()
+    start_time = datetime.now(timezone.utc)
 
     project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
     db_session.add(project)

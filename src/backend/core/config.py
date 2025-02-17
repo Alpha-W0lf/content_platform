@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     def set_test_database_url(cls, v: Optional[str], info: ValidationInfo) -> str:
         if not v:
             # If TEST_DATABASE_URL is not set, derive it from DATABASE_URL
-            base_url: str = info.data.get("DATABASE_URL", "")
+            base_url: str = str(info.data.get("DATABASE_URL", ""))
             return base_url.replace("content_platform", "test_content_platform")
         return v
 
@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     def set_celery_urls(cls, v: Optional[str], info: ValidationInfo) -> str:
         if not v and "REDIS_URL" in info.data:
             redis_url = info.data.get("REDIS_URL")
-            if redis_url:
-                return redis_url
+            if redis_url is not None:
+                return str(redis_url)
         return v or ""
 
     class Config:

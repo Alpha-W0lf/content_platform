@@ -1,11 +1,26 @@
 [flake8]
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info,
+    venv,
+    .venv,
+    .env,
+    env,
+    .tox,
+    site-packages,
+    */migrations/*,
+    node_modules
+
+# Recommended line length to match black's default
 max-line-length = 88
-extend-ignore = E203, W503, I100, I101, I201, I202
-# Allow longer lines in docstrings
-max-doc-length = 120
-per-file-ignores =
-    # Ignore docstring related warnings in tests
-    tests/*: D100,D101,D102,D103
-import-order-style = pep8
-application-import-names = src
-exclude = .git,__pycache__,build,dist,*.egg-info,.venv
+
+# Ignore some common errors:
+# E203: Whitespace before ':' (conflicts with black)
+# W503: Line break before binary operator (conflicts with black)
+extend-ignore = E203, W503
+
+# Select specific error codes to enable
+select = C,E,F,W,B,B950

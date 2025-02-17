@@ -2,7 +2,7 @@
 Common dependencies for FastAPI routes.
 """
 
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Dict
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -19,7 +19,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     """
     Dependency to get the current authenticated user.
     Usage:

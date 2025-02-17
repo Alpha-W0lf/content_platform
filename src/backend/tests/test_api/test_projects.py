@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 from uuid import UUID, uuid4
 
 import pytest
@@ -10,41 +11,41 @@ from src.backend.schemas.project import ProjectCreate, ProjectStatus
 
 
 @pytest.mark.asyncio
-async def test_create_project(client: AsyncClient, db_session: AsyncSession):
+async def test_create_project(client: AsyncClient, db_session: AsyncSession) -> None:
     """Test successful project creation"""
     data = ProjectCreate(
         topic="Test Topic", notes="Test Notes", name="Test Name"
     ).model_dump()
-    response = await client.post("/projects/", json=data)
+    response = await client.post("/api/v1/projects/", json=data)
 
     assert response.status_code == status.HTTP_201_CREATED
-    project = response.json()
-    assert project["topic"] == "Test Topic"
-    assert project["notes"] == "Test Notes"
-    assert project["name"] == "Test Name"
-    assert project["status"] == "CREATED"
-    assert "id" in project
-    assert isinstance(UUID(project["id"]), UUID)  # Ensure ID is a valid UUID
+    project_dict = response.json()
+    assert project_dict["topic"] == "Test Topic"
+    assert project_dict["notes"] == "Test Notes"
+    assert project_dict["name"] == "Test Name"
+    assert project_dict["status"] == ProjectStatus.CREATED.value
+    assert "id" in project_dict
+    assert isinstance(UUID(project_dict["id"]), UUID)
 
     # Check if the project exists in the database
-    retrieved_project = await db_session.get(Project, UUID(project["id"]))
+    retrieved_project = await db_session.get(Project, UUID(project_dict["id"]))
     assert retrieved_project is not None
     assert retrieved_project.topic == "Test Topic"
     assert retrieved_project.name == "Test Name"
 
 
 @pytest.mark.asyncio
-async def test_create_project_missing_topic(client: AsyncClient):
+async def test_create_project_missing_topic(client: AsyncClient) -> None:
     """Test project creation with missing required field"""
-    data = {"notes": "Test Notes"}
-    response = await client.post("/projects/", json=data)
+    data: Dict[str, Any] = {"notes": "Test Notes"}
+    response = await client.post("/api/v1/projects/", json=data)
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_create_project_invalid_topic(client: AsyncClient):
+async def test_create_project_invalid_topic(client: AsyncClient) -> None:
     """Test project creation with invalid topic type (e.g., number instead of string)"""
-    data = {"topic": 123, "notes": "Test Notes"}  # Invalid topic type
+    data: Dict[str, Any] = {"topic": 123, "notes": "Test Notes"}  # Invalid topic type
     response = await client.post("/projects/", json=data)
     assert response.status_code == 422  # Expecting a validation error
 
@@ -53,7 +54,9 @@ async def test_create_project_invalid_topic(client: AsyncClient):
 async def test_get_project_status(client: AsyncClient, db_session: AsyncSession):
     """Test getting project status"""
     # Create a project first
-    project = Project(topic="Test Topic", notes="Test Notes", status="CREATED")
+    project = Project(
+        id=uuid4(), topic="Test Topic", notes="Test Notes", status=ProjectStatus.CREATED
+    )
     db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
@@ -111,23 +114,27 @@ async def test_get_project_invalid_id(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_list_projects(client: AsyncClient, db_session: AsyncSession):
+async def test_list_projects(client: AsyncClient, db_session: AsyncSession) -> None:
     """Test getting a list of projects"""
     # Create a few projects
-    project1 = Project(topic="Topic 1", notes="Notes 1", status="CREATED")
-    project2 = Project(topic="Topic 2", notes="Notes 2", status="PROCESSING")
+    project1 = Project(
+        id=uuid4(), topic="Topic 1", notes="Notes 1", status=ProjectStatus.CREATED
+    )
+    project2 = Project(
+        id=uuid4(), topic="Topic 2", notes="Notes 2", status=ProjectStatus.PROCESSING
+    )
     db_session.add_all([project1, project2])
     await db_session.commit()
 
     # Get the list of projects
     response = await client.get("/projects/")
     assert response.status_code == 200
-    projects = response.json()
-    assert isinstance(projects, list)
-    assert len(projects) == 2  # Check if both projects are returned
+    projects_list: List[Dict[str, Any]] = response.json()
+    assert isinstance(projects_list, list)
+    assert len(projects_list) == 2
 
     # Check if the projects have expected data
-    topics = {project["topic"] for project in projects}
+    topics: set[str] = {str(p["topic"]) for p in projects_list}
     assert "Topic 1" in topics
     assert "Topic 2" in topics
 

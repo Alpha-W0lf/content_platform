@@ -18,11 +18,17 @@ def parse_json(json_str: Optional[str]) -> Dict[str, Any]:
     """
     Safely parse JSON string to dictionary.
     Returns empty dict if input is None or invalid JSON.
+
+    Args:
+        json_str: JSON string to parse
+
+    Returns:
+        Dict[str, Any]: Parsed JSON as dictionary, or empty dict if parsing fails
     """
     if not json_str:
         return {}
     try:
-        return json.loads(json_str)
+        return dict(json.loads(json_str))  # Explicitly convert to dict
     except json.JSONDecodeError:
         return {}
 

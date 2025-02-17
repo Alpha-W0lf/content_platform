@@ -1,10 +1,9 @@
-# mypy: disable-error-code="import-untyped"
 from celery import Celery
 
-celery = Celery("content_platform", include=["src.backend.tasks.project_tasks"])
+from src.backend.core.config import settings
 
-# Load the configuration from the celeryconfig module
-celery.config_from_object("src.backend.celeryconfig")
+celery_app = Celery("content_platform")
+celery_app.config_from_object(settings)
 
 if __name__ == "__main__":
-    celery.start()
+    celery_app.start()
