@@ -31,7 +31,7 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile.celery
-    command: celery -A src.backend.tasks.celery_app worker --loglevel=DEBUG --concurrency=12 -E
+    command: celery -A src.backend.tasks worker --loglevel=DEBUG --concurrency=12 -E
     volumes:
       - ./src/backend:/app/src/backend
     depends_on:
@@ -49,7 +49,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "celery -A src.backend.tasks.celery_app inspect ping -d celery@$$HOSTNAME",
+          "celery -A backend.tasks inspect ping -d celery@$$HOSTNAME",
         ]
       interval: 10s
       timeout: 5s
@@ -148,7 +148,8 @@ services:
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      test:
+        ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

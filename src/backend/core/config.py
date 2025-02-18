@@ -17,6 +17,18 @@ class Settings(BaseSettings):
     CLERK_SECRET_KEY: Optional[str] = None
     HEYGEN_API_KEY: Optional[str] = None
 
+    # Add Clerk public configurations
+    next_public_clerk_publishable_key: Optional[str] = None
+    next_public_api_url: Optional[str] = None
+    next_public_clerk_sign_in_url: Optional[str] = None
+    next_public_clerk_sign_up_url: Optional[str] = None
+    next_public_clerk_after_sign_in_url: Optional[str] = None
+    next_public_clerk_after_sign_up_url: Optional[str] = None
+
+    # Add Heygen credentials
+    heygen_email: Optional[str] = None
+    heygen_password: Optional[str] = None
+
     @field_validator("TEST_DATABASE_URL", mode="before")
     def set_test_database_url(cls, v: Optional[str], info: ValidationInfo) -> str:
         if not v:
@@ -34,7 +46,7 @@ class Settings(BaseSettings):
         return v or ""
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.backend"  # Updated to use the correct env file
 
 
 settings = Settings()

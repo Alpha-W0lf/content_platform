@@ -3,10 +3,13 @@ import logging
 from typing import Any  # noqa: F401
 
 from typing_extensions import ParamSpec
+import sys
 
 from src.backend.models.project import Project  # noqa: F401
 from src.backend.schemas.project import ProjectStatus  # noqa: F401
 from src.backend.tasks import celery_app
+
+print("Loading project_tasks.py")
 
 P = ParamSpec("P")
 
@@ -25,6 +28,7 @@ def test_task(x: int, y: int) -> int:
         The sum of x and y
     """
     logger.debug(f"test_task called with x={x}, y={y}")
+    logger.info(f"sys.path: {sys.path}")  # Print sys.path
     result = x + y
     logger.debug(f"test_task result: {result}")
     return result

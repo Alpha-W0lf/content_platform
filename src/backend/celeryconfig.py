@@ -6,7 +6,7 @@ broker_connection_max_retries = 10  # Add max retries
 broker_connection_timeout = 30  # Add timeout in seconds
 
 # Additional logging configuration for detailed celery worker debugging
-CELERYD_HIJACK_ROOT_LOGGER = False
+worker_hijack_root_logger = False
 CELERY_WORKER_LOG_FORMAT = "[%(asctime)s: %(levelname)s/%(processName)s] %(message)s"
 CELERY_WORKER_TASK_LOG_FORMAT = (
     "[%(asctime)s: %(levelname)s/%(processName)s] "
