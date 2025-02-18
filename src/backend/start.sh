@@ -9,6 +9,18 @@ done
 echo "Database is ready!"
 echo "pg_isready exit code: $?"
 
+# Print Postgres version and server info
+echo "Checking Postgres version and connection info..."
+PGPASSWORD=password psql -h postgres -U user -d content_platform -c "SELECT version();"
+
+# Check authentication method
+echo "Checking authentication configuration..."
+PGPASSWORD=password psql -h postgres -U user -d content_platform -c "SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'user';"
+
+# Check current user permissions
+echo "Checking user permissions..."
+PGPASSWORD=password psql -h postgres -U user -d content_platform -c "\du"
+
 # Attempt a simple connection with psql
 echo "Attempting connection with psql..."
 PGPASSWORD=password psql -h postgres -U user -d content_platform -c "SELECT 1;"
