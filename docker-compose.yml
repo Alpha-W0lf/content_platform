@@ -36,6 +36,7 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile.celery
+    command: celery -A src.backend.tasks.celery_app worker --loglevel=DEBUG --concurrency=12 -E
     volumes:
       - ./src/backend:/app/src/backend
     depends_on:
@@ -56,21 +57,11 @@ services:
     networks:
       - content-platform
     healthcheck:
-      test:
-        [
-          "CMD",
-          "celery",
-          "-A",
-          "src.backend.tasks",
-          "inspect",
-          "ping",
-          "-b",
-          "redis://:password@redis:6379/0",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD-SHELL", "celery -A src.backend.tasks.celery_app inspect ping -d celery@$$HOSTNAME"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   postgres:
@@ -113,7 +104,7 @@ services:
       - "8001:8001" # RedisInsight monitoring port
     volumes:
       - redis_data:/data
-    command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --save 60 1 --loglevel warning --protected-mode no
+    command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --loglevel verbose
     networks:
       - content-platform
     healthcheck:

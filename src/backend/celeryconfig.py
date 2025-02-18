@@ -5,6 +5,14 @@ broker_connection_retry = True
 broker_connection_max_retries = 10  # Add max retries
 broker_connection_timeout = 30  # Add timeout in seconds
 
+# Additional logging configuration for detailed celery worker debugging
+CELERYD_HIJACK_ROOT_LOGGER = False
+CELERY_WORKER_LOG_FORMAT = "[%(asctime)s: %(levelname)s/%(processName)s] %(message)s"
+CELERY_WORKER_TASK_LOG_FORMAT = (
+    "[%(asctime)s: %(levelname)s/%(processName)s] "
+    "[%(task_name)s(%(task_id)s)] %(message)s"
+)
+
 task_serializer = "json"
 result_serializer = "json"
 accept_content = ["json"]
