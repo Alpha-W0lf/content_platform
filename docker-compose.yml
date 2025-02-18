@@ -12,14 +12,9 @@ services:
     depends_on:
       - postgres
       - redis
+    env_file:
+      - .env.backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
-      - TEST_DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/test_content_platform
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://:password@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:password@redis:6379/0
-      - REDIS_PASSWORD=password
-      - PYTHONPYCACHEPREFIX=/tmp/pycache
       - PYDEVD_DISABLE_FILE_VALIDATION=1
     networks:
       - content-platform
@@ -44,20 +39,18 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    env_file:
+      - .env.backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
-      - TEST_DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/test_content_platform
-      - REDIS_URL=redis://:password@redis:6379/0
-      - CELERY_BROKER_URL=redis://:password@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:password@redis:6379/0
-      - REDIS_PASSWORD=password
-      - PYTHONPYCACHEPREFIX=/tmp/pycache
       - PYDEVD_DISABLE_FILE_VALIDATION=1
-      - C_FORCE_ROOT=true
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD-SHELL", "celery -A src.backend.tasks.celery_app inspect ping -d celery@$$HOSTNAME"]
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A src.backend.tasks.celery_app inspect ping -d celery@$$HOSTNAME",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -73,7 +66,6 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: content_platform
       PGUSER: user
-      # Add initialization of Grafana database
       POSTGRES_MULTIPLE_DATABASES: content_platform,test_content_platform,grafana
     command:
       - "postgres"
@@ -83,7 +75,6 @@ services:
       - "shared_preload_libraries=pg_stat_statements"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Ensure proper mounting of initialization script
       - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/00-init-databases.sh
       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
       - ./config/postgres/postgres-exporter:/usr/local/bin/postgres-exporter
@@ -98,10 +89,10 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis/redis-stack:latest # Using redis-stack for built-in monitoring
+    image: redis/redis-stack:latest
     ports:
       - "6379:6379"
-      - "8001:8001" # RedisInsight monitoring port
+      - "8001:8001"
     volumes:
       - redis_data:/data
     command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --loglevel verbose
@@ -118,7 +109,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "0.0.0.0:9090:9090" # Bind to all interfaces
+      - "0.0.0.0:9090:9090"
     volumes:
       - ./config/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
@@ -135,7 +126,7 @@ services:
   grafana:
     image: grafana/grafana:11.5.1
     ports:
-      - "0.0.0.0:3001:3000" # Bind to all interfaces
+      - "0.0.0.0:3001:3000"
     volumes:
       - ./config/grafana:/etc/grafana/provisioning
       - ./config/grafana/grafana-init.sh:/grafana-init.sh
@@ -146,7 +137,6 @@ services:
       - GF_DATABASE_NAME=grafana
       - GF_DATABASE_USER=user
       - GF_DATABASE_PASSWORD=password
-      # Optional performance tuning
       - GF_DATABASE_MAX_OPEN_CONN=300
       - GF_DATABASE_MAX_IDLE_CONN=100
       - GF_DATABASE_CONN_MAX_LIFETIME=14400
@@ -158,8 +148,7 @@ services:
     networks:
       - content-platform
     healthcheck:
-      test:
-        ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -179,7 +168,7 @@ services:
         - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
         - NEXT_PUBLIC_API_URL=http://api:8000
     ports:
-      - "0.0.0.0:3000:3000" # Bind to all interfaces
+      - "0.0.0.0:3000:3000"
     env_file:
       - .env
     environment:
