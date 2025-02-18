@@ -79,8 +79,8 @@ services:
       - "shared_preload_libraries=pg_stat_statements"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Add initialization script
-      - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+      # Ensure proper mounting of initialization script
+      - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/00-init-databases.sh
       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
       - ./config/postgres/postgres-exporter:/usr/local/bin/postgres-exporter
     networks:
@@ -100,11 +100,16 @@ services:
       - "8001:8001" # RedisInsight monitoring port
     volumes:
       - redis_data:/data
-    command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --save 60 1 --loglevel warning
+    command: >
+      redis-stack-server 
+      --requirepass ${REDIS_PASSWORD:-password}
+      --save 60 1 
+      --loglevel warning
+      --protected-mode no  # Allow connections from other containers
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-password}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
