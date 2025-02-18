@@ -1,7 +1,9 @@
-broker_url = "redis://redis:6379/0"
-result_backend = "redis://redis:6379/0"
-broker_connection_retry_on_startup = True  # Add this to handle the deprecation warning
-broker_connection_retry = True  # Keep existing behavior
+broker_url = "redis://:password@redis:6379/0"
+result_backend = "redis://:password@redis:6379/0"
+broker_connection_retry_on_startup = True
+broker_connection_retry = True
+broker_connection_max_retries = 10  # Add max retries
+broker_connection_timeout = 30  # Add timeout in seconds
 
 task_serializer = "json"
 result_serializer = "json"
