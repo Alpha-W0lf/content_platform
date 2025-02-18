@@ -39,21 +39,34 @@ services:
     volumes:
       - ./src/backend:/app/src/backend
     depends_on:
-      - api
-      - redis
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
       - TEST_DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/test_content_platform
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:password@redis:6379/0
       - CELERY_BROKER_URL=redis://:password@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:password@redis:6379/0
       - REDIS_PASSWORD=password
       - PYTHONPYCACHEPREFIX=/tmp/pycache
       - PYDEVD_DISABLE_FILE_VALIDATION=1
+      - C_FORCE_ROOT=true
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD", "celery", "-A", "src.backend.tasks", "inspect", "ping"]
+      test:
+        [
+          "CMD",
+          "celery",
+          "-A",
+          "src.backend.tasks",
+          "inspect",
+          "ping",
+          "-b",
+          "redis://:password@redis:6379/0",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -79,8 +92,8 @@ services:
       - "shared_preload_libraries=pg_stat_statements"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Add initialization script
-      - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+      # Ensure proper mounting of initialization script
+      - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/00-init-databases.sh
       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
       - ./config/postgres/postgres-exporter:/usr/local/bin/postgres-exporter
     networks:
@@ -100,11 +113,11 @@ services:
       - "8001:8001" # RedisInsight monitoring port
     volumes:
       - redis_data:/data
-    command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --save 60 1 --loglevel warning
+    command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --save 60 1 --loglevel warning --protected-mode no
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-password}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -134,6 +147,7 @@ services:
       - "0.0.0.0:3001:3000" # Bind to all interfaces
     volumes:
       - ./config/grafana:/etc/grafana/provisioning
+      - ./config/grafana/grafana-init.sh:/grafana-init.sh
       - grafana_data:/var/lib/grafana
     environment:
       - GF_DATABASE_TYPE=postgres
@@ -145,6 +159,11 @@ services:
       - GF_DATABASE_MAX_OPEN_CONN=300
       - GF_DATABASE_MAX_IDLE_CONN=100
       - GF_DATABASE_CONN_MAX_LIFETIME=14400
+      - GF_DATABASE_SSL_MODE=disable
+    entrypoint: ["/bin/bash", "/grafana-init.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - content-platform
     healthcheck:
