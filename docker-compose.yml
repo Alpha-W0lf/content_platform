@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: .docker/Dockerfile.api
     ports:
-      - "0.0.0.0:8000:8000"  # Bind to all interfaces
-      - "0.0.0.0:5678:5678"  # Debug port
+      - "0.0.0.0:8000:8000" # Bind to all interfaces
+      - "0.0.0.0:5678:5678" # Debug port
     volumes:
       - ./src/backend:/app/src/backend
       - ./alembic.ini:/app/alembic.ini
@@ -16,8 +16,11 @@ services:
       - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
       - TEST_DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/test_content_platform
       - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://:password@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:password@redis:6379/0
+      - REDIS_PASSWORD=password
+      - PYTHONPYCACHEPREFIX=/tmp/pycache
+      - PYDEVD_DISABLE_FILE_VALIDATION=1
     networks:
       - content-platform
     healthcheck:
@@ -27,6 +30,7 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    user: "501:20"
 
   celery_worker:
     build:
@@ -41,8 +45,11 @@ services:
       - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform
       - TEST_DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/test_content_platform
       - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://:password@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:password@redis:6379/0
+      - REDIS_PASSWORD=password
+      - PYTHONPYCACHEPREFIX=/tmp/pycache
+      - PYDEVD_DISABLE_FILE_VALIDATION=1
     networks:
       - content-platform
     healthcheck:
@@ -64,10 +71,18 @@ services:
       PGUSER: user
       # Add initialization of Grafana database
       POSTGRES_MULTIPLE_DATABASES: content_platform,test_content_platform,grafana
+    command:
+      - "postgres"
+      - "-c"
+      - "hba_file=/etc/postgresql/pg_hba.conf"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Add initialization script
       - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+      - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./config/postgres/postgres-exporter:/usr/local/bin/postgres-exporter
     networks:
       - content-platform
     healthcheck:
@@ -79,11 +94,13 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7
+    image: redis/redis-stack:latest # Using redis-stack for built-in monitoring
     ports:
       - "6379:6379"
+      - "8001:8001" # RedisInsight monitoring port
     volumes:
       - redis_data:/data
+    command: redis-stack-server --requirepass ${REDIS_PASSWORD:-password} --save 60 1 --loglevel warning
     networks:
       - content-platform
     healthcheck:
@@ -97,7 +114,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "0.0.0.0:9090:9090"  # Bind to all interfaces
+      - "0.0.0.0:9090:9090" # Bind to all interfaces
     volumes:
       - ./config/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
@@ -112,9 +129,9 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.5.1
     ports:
-      - "0.0.0.0:3001:3000"  # Bind to all interfaces
+      - "0.0.0.0:3001:3000" # Bind to all interfaces
     volumes:
       - ./config/grafana:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
@@ -131,12 +148,14 @@ services:
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      test:
+        ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    user: "0"
 
   frontend:
     build:
@@ -150,7 +169,7 @@ services:
         - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
         - NEXT_PUBLIC_API_URL=http://api:8000
     ports:
-      - "0.0.0.0:3000:3000"  # Bind to all interfaces
+      - "0.0.0.0:3000:3000" # Bind to all interfaces
     env_file:
       - .env
     environment:

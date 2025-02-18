@@ -7,6 +7,11 @@ until pg_isready -h postgres -U user -d content_platform; do
   sleep 1
 done
 echo "Database is ready!"
+echo "pg_isready exit code: $?"
+
+# Attempt a simple connection with psql
+echo "Attempting connection with psql..."
+PGPASSWORD=password psql -h postgres -U user -d content_platform -c "SELECT 1;"
 
 # Run migrations
 echo "Running database migrations..."

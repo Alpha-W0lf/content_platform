@@ -59,19 +59,19 @@ This is one part of a multi-part guide to developing and testing the Content Pla
   - [x] `/projects` GET (list) endpoint
     - [x] Empty list
     - [x] Multiple projects
-- [x] Initial Model Tests
-  - [x] Project model creation
-  - [x] Project status transitions
-  - [x] Project-Asset relationship
-  - [x] Project cascade delete
-  - [x] Asset model creation
-  - [x] Asset model updates
-  - [x] Asset model timestamp updates
-  - [x] Asset model enum validation
-  - [x] Asset model path not nullable
 
 ### In Progress 🚧
 
+- [ ] Initial Model Tests
+  - [ ] Project model creation
+  - [ ] Project status transitions
+  - [ ] Project-Asset relationship
+  - [ ] Project cascade delete
+  - [ ] Asset model creation
+  - [ ] Asset model updates
+  - [ ] Asset model timestamp updates
+  - [ ] Asset model enum validation
+  - [ ] Asset model path not nullable
 - [ ] Basic Error Handling
   - [ ] Initial try/except blocks in endpoints
   - [ ] Basic validation error responses
@@ -285,4 +285,3 @@ Bash
 This will run all your backend tests (both API and model tests). Make sure they all pass before moving on. If any tests fail, carefully examine the error messages and debug your code.
 
 This completes this part. Once all tests are passing and you've reviewed the code and structure, you can move on to the next part, which will focus on the PATCH endpoint and more advanced error handling. Let me know when you are ready to continue.
-```

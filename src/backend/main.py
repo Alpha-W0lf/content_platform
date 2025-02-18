@@ -12,7 +12,6 @@ from src.backend.core.config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup
-    Instrumentator().instrument(app).expose(app)
     yield
     # Shutdown
 
@@ -29,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Set up Prometheus metrics
+Instrumentator().instrument(app).expose(app)
 
 # Include routers
 app.include_router(projects.router, prefix="/api/v1", tags=["projects"])
