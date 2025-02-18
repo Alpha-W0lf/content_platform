@@ -31,7 +31,6 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile.celery
-    command: celery -A src.backend.tasks worker --loglevel=DEBUG --concurrency=12 -E
     volumes:
       - ./src/backend:/app/src/backend
     depends_on:
@@ -45,16 +44,6 @@ services:
       - PYDEVD_DISABLE_FILE_VALIDATION=1
     networks:
       - content-platform
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "celery -A backend.tasks inspect ping -d celery@$$HOSTNAME",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     restart: unless-stopped
 
   postgres:
