@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-# Wait for PostgreSQL to be ready
-echo "Waiting for PostgreSQL..."
-until pg_isready -h postgres -p 5432 -U user; do
+# Wait for PostgreSQL to be ready by checking Grafana's health endpoint.
+echo "Waiting for Grafana to be ready..."
+until wget --spider -q "http://localhost:3000/api/health"; do
   sleep 2
 done
 
-echo "PostgreSQL is ready, starting Grafana..."
+echo "Grafana is ready, starting..."
 exec /run.sh
