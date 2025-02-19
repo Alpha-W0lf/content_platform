@@ -166,6 +166,8 @@ yarn-error.log*
 .env.local
 .env.development
 .env.test
+.env.backend
+.env.frontend
 
 # Docker
 docker-compose.override.yml
