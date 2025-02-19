@@ -55,7 +55,7 @@
                 "python.formatting.provider": "black",
                 "editor.formatOnSave": true,
                 "editor.codeActionsOnSave": {
-                    "source.organizeImports": true
+                    "source.organizeImports": "explicit"
                 },
                 "github.copilot.enable": {
                     "*": true,
@@ -66,6 +66,5 @@
             }
         }
     },
-    "remoteUser": "root",
-    "postCreateCommand": "pip install black isort pylint"
+    "remoteUser": "501:20"
 }

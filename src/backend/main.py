@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from src.backend.api.routers import projects
-from src.backend.core.config import settings
+from .api.routers import projects
+from .core.config import settings
 
 
 @asynccontextmanager

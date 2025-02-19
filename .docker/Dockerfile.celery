@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD celery -A src.backend.tasks inspect ping || exit 1
 
 # Start Celery worker
-CMD ["celery", "-A", "src.backend.tasks", "worker", "--loglevel=info"]
+CMD env && celery -A src.backend.tasks worker --loglevel=info

@@ -16,8 +16,13 @@ chmod 777 /data
 
 # Substitute environment variables in redis.conf
 echo "Substituting environment variables in redis.conf..."
+echo "REDIS_PASSWORD (before envsubst): $REDIS_PASSWORD"
 envsubst < /redis.conf > /tmp/redis.conf
+echo "Contents of /tmp/redis.conf (after envsubst):"
+cat /tmp/redis.conf
 mv /tmp/redis.conf /redis.conf
+echo "Contents of /redis.conf (final):"
+cat /redis.conf
 
 # Check Redis binary
 REDIS_SERVER="/usr/bin/redis-stack-server"
@@ -45,4 +50,4 @@ ls -l /redis.conf || {
 
 # Start Redis Stack Server with configuration
 echo "Starting Redis Stack Server..."
-exec "$REDIS_SERVER" /redis.conf "$@" 2>&1 | tee -a "$LOG_FILE" 
+exec "$REDIS_SERVER" /redis.conf "$@" 2>&1 | tee -a "$LOG_FILE"

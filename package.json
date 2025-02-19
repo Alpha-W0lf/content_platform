@@ -7,16 +7,22 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "concurrently \"uvicorn src.backend.main:app --reload --host 0.0.0.0 --port 8000\" \"npm run dev --prefix src/frontend\"",
+    "dev:docker": "docker-compose up -d --build",
     "start": "docker-compose up --build",
     "start:detached": "docker-compose up -d --build",
     "stop": "docker-compose down",
     "test": "pytest src/backend/tests",
+    "test:docker": "docker-compose run backend pytest",
     "test:e2e": "cypress run",
+    "test:e2e:docker": "docker-compose run frontend cypress run",
     "format": "prettier --write \"src/frontend/**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "frontend:install": "cd src/frontend && npm install"
+    "frontend:install": "cd src/frontend && npm install",
+    "build:docker": "docker-compose build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "cypress": "^14.0.3",
+    "jest": "^29.7.0",
     "prettier-plugin-tailwindcss": "^0.6.11"
   },
   "dependencies": {

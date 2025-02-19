@@ -91,7 +91,6 @@ services:
       - content-platform
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_PASSWORD
     command: ["redis-stack-server", "/redis.conf", "--verbose", "--loglevel", "debug"]
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
@@ -164,17 +163,23 @@ services:
       context: .
       dockerfile: .docker/Dockerfile.frontend
       args:
-        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-        - NEXT_PUBLIC_CLERK_SIGN_IN_URL
-        - NEXT_PUBLIC_CLERK_SIGN_UP_URL
-        - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
-        - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
-        - NEXT_PUBLIC_API_URL=http://api:8000
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+        - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+        - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+        - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     ports:
       - "0.0.0.0:3000:3000"
     env_file:
       - .env.frontend
-    # Removed environment, as it duplicates .env.frontend
+    environment:
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+      - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+      - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+      - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - api
     networks:
@@ -186,6 +191,7 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    user: "node"
 
 networks:
   content-platform:
