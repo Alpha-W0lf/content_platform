@@ -13,8 +13,19 @@ from src.backend.schemas.project import (
     ProjectStatus,
     ProjectUpdate,
 )
+from src.backend.tasks.project_tasks import redis_interaction_test, test_task
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+@router.get("/test-tasks")
+async def run_test_tasks():
+    """
+    Runs test tasks for debugging.
+    """
+    task1 = redis_interaction_test.delay()
+    task2 = test_task.delay(2, 2)
+    return {"redis_interaction_test": task1.id, "test_task": task2.id}
 
 
 @router.post("/", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)

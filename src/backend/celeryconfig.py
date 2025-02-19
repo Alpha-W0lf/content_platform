@@ -1,5 +1,9 @@
-broker_url = "redis://:password@redis:6379/0"
-result_backend = "redis://:password@redis:6379/0"
+import os
+
+broker_url = f"redis://:{os.getenv('REDIS_PASSWORD', 'password')}@redis:6379/0"
+result_backend = (
+    f"redis://:{os.getenv('REDIS_PASSWORD', 'password')}@redis:6379/0"
+)
 broker_connection_retry_on_startup = True
 broker_connection_retry = True
 broker_connection_max_retries = 10  # Add max retries
