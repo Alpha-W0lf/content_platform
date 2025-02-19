@@ -1,0 +1,14 @@
+FROM redis/redis-stack:latest
+
+# Install gettext-base for envsubst
+RUN apt-get update && apt-get install -y gettext-base && rm -rf /var/lib/apt/lists/*
+
+# Copy configuration files
+COPY config/redis/redis.conf /redis.conf
+COPY config/redis/docker-entrypoint.sh /docker-entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["--loglevel", "debug"] 

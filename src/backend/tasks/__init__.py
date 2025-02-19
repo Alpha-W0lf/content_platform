@@ -1,7 +1,8 @@
-from celery import Celery
 import logging
 import os
 import sys
+
+from celery import Celery
 
 print("Loading __init__.py in src/backend/tasks")
 print(f"__file__: {__file__}")
@@ -30,9 +31,7 @@ try:
 
     # Log Redis-related environment variables
     logger.debug(f"REDIS_PASSWORD: {os.getenv('REDIS_PASSWORD')}")
-    logger.debug(
-        "REDIS_URL (from .env.backend): " f"{os.getenv('REDIS_URL')}"
-    )
+    logger.debug("REDIS_URL (from .env.backend): " f"{os.getenv('REDIS_URL')}")
 
     # Autodiscover tasks
     celery_app.autodiscover_tasks(["src.backend.tasks.project_tasks"])

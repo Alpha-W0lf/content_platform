@@ -1,14 +1,14 @@
 # mypy: disable-error-code="import-untyped"
 import logging
+import sys
 from typing import Any  # noqa: F401
 
+import redis
 from typing_extensions import ParamSpec
-import sys
 
 from src.backend.models.project import Project  # noqa: F401
 from src.backend.schemas.project import ProjectStatus  # noqa: F401
 from src.backend.tasks import celery_app
-import redis
 
 print("Loading project_tasks.py")
 

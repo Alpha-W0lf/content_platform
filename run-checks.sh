@@ -27,5 +27,5 @@ if command -v pyright &> /dev/null; then
     pyright src/
     echo "✅ pyright complete"
 fi
-
 echo "\n✨ All checks completed!"
+

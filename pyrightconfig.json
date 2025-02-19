@@ -12,7 +12,7 @@
   ],
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
-  "pythonVersion": "3.12",
+  "pythonVersion": "3.11",
   "typeCheckingMode": "basic",
   "strictParameterNoneValue": false,
   "reportUnknownParameterType": "none",
