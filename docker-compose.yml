@@ -84,11 +84,20 @@ services:
       - "8001:8001"
     volumes:
       - redis_data:/data
-    command: redis-stack-server --requirepass ${REDIS_PASSWORD} --loglevel verbose
+    command:
+      [
+        "redis-stack-server",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+        "--loglevel",
+        "debug",
+      ]
     networks:
       - content-platform
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
