@@ -2,6 +2,11 @@ import os
 
 broker_url = f"redis://:{os.getenv('REDIS_PASSWORD', 'password')}@redis:6379/0"
 result_backend = f"redis://:{os.getenv('REDIS_PASSWORD', 'password')}@redis:6379/0"
+
+# Log the broker and result backend URLs
+print(f"Celery broker URL: {broker_url}")
+print(f"Celery result backend URL: {result_backend}")
+
 broker_connection_retry_on_startup = True
 broker_connection_retry = True
 broker_connection_max_retries = 10  # Add max retries
