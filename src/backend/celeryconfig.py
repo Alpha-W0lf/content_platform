@@ -1,7 +1,7 @@
 import os
 
-broker_url = f"redis://:{os.getenv('REDIS_PASSWORD', 'password')}@redis:6379/0"
-result_backend = f"redis://:{os.getenv('REDIS_PASSWORD', 'password')}@redis:6379/0"
+broker_url = f"redis://:{os.getenv('REDIS_PASSWORD')}@redis:6379/0"
+result_backend = f"redis://:{os.getenv('REDIS_PASSWORD')}@redis:6379/0"
 
 # Log the broker and result backend URLs
 print(f"Celery broker URL: {broker_url}")
