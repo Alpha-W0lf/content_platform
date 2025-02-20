@@ -73,8 +73,8 @@ RUN echo '#!/bin/bash\n\
     echo "\nNetwork Interfaces:" | tee -a /var/log/redis/startup.log\n\
     ip addr | tee -a /var/log/redis/startup.log\n\
     echo "\nStarting Redis Server..." | tee -a /var/log/redis/startup.log\n\
-    exec "$@" 2>&1 | tee -a /var/log/redis/redis-debug.log' > /enhanced-entrypoint.sh && \
-    chmod +x /enhanced-entrypoint.sh
+    exec "$@" 2>&1 | tee -a /var/log/redis/redis-debug.log' > /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
-ENTRYPOINT ["/enhanced-entrypoint.sh"]
-CMD ["redis-stack-server", "/redis.conf", "--verbose", "--loglevel", "debug"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["redis-stack-server", "/redis.conf"]

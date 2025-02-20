@@ -4,15 +4,12 @@ set -ex
 # Setup logging directory with proper permissions
 echo "Setting up logging directory..."
 mkdir -p /var/log/redis
-chmod 777 /var/log/redis
 LOG_FILE="/var/log/redis/redis-debug.log"
 touch "$LOG_FILE"
-chmod 666 "$LOG_FILE"
 
 # Create and set permissions for data directory
 echo "Setting up data directory..."
 mkdir -p /data
-chmod 777 /data
 
 # Substitute environment variables in redis.conf
 echo "Substituting environment variables in redis.conf..."
@@ -47,6 +44,10 @@ ls -l /redis.conf || {
     echo "ERROR: /redis.conf not found"
     exit 1
 }
+
+# Log the final configuration before starting Redis
+echo "Logging final Redis configuration to /var/log/redis/final_redis.conf"
+cat /redis.conf > /var/log/redis/final_redis.conf
 
 # Start Redis Stack Server with configuration
 echo "Starting Redis Stack Server..."
