@@ -33,6 +33,7 @@ services:
       dockerfile: .docker/Dockerfile.celery
     volumes:
       - ./src/backend:/app/src/backend
+      - ./logs/celery:/app/celery_logs
     depends_on:
       redis:
         condition: service_healthy
@@ -45,6 +46,13 @@ services:
     networks:
       - content-platform
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        tag: "{{.Name}}"
+        labels: "celery"
 
   postgres:
     image: postgres:15
@@ -91,9 +99,10 @@ services:
       - content-platform
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-    command: ["redis-stack-server", "/redis.conf", "--verbose", "--loglevel", "debug"]
+    command:
+      ["redis-stack-server", "/redis.conf", "--verbose", "--loglevel", "debug"]
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "/healthcheck.sh"]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -163,12 +172,12 @@ services:
       context: .
       dockerfile: .docker/Dockerfile.frontend
       args:
-        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-        - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
-        - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
-        - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
-        - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
+        NEXT_PUBLIC_CLERK_SIGN_IN_URL: "${NEXT_PUBLIC_CLERK_SIGN_IN_URL}"
+        NEXT_PUBLIC_CLERK_SIGN_UP_URL: "${NEXT_PUBLIC_CLERK_SIGN_UP_URL}"
+        NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: "${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}"
+        NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: "${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}"
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL}"
     ports:
       - "0.0.0.0:3000:3000"
     env_file:
@@ -180,6 +189,9 @@ services:
       - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
       - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    volumes:
+      - ./logs/frontend/build_logs:/app/build_logs
+      - ./logs/frontend/runtime_logs:/app/runtime_logs
     depends_on:
       - api
     networks:
