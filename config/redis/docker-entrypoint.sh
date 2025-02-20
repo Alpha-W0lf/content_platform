@@ -23,12 +23,12 @@ echo "Setting up logging directory..."
 mkdir -p /var/log/redis
 LOG_FILE="/var/log/redis/redis-debug.log"
 touch "$LOG_FILE"
-chown -R redis:redis /var/log/redis
+chown -R root:root /var/log/redis
 
 # Create and set permissions for data directory
 echo "Setting up data directory..."
 mkdir -p /data
-chown -R redis:redis /data
+chown -R root:root /data
 
 # Substitute environment variables in redis.conf
 echo "Substituting environment variables in redis.conf..."
@@ -37,10 +37,13 @@ mv /tmp/redis.conf /redis.conf
 
 # Test Redis configuration file
 echo "Testing Redis configuration..."
+echo "Starting Redis configuration test: redis-server /redis.conf --test-memory 1024"
 redis-server /redis.conf --test-memory 1024 || {
     echo "ERROR: Redis configuration test failed"
+    echo "Redis configuration test failed with error."
     exit 1
 }
+echo "Redis configuration test passed successfully."
 
 # Initialize Redis with default user and ACL
 echo "Initializing Redis ACLs..."
@@ -74,7 +77,12 @@ echo "Initializing Redis ACLs..."
     # Clean shutdown
     redis-cli shutdown
     wait $REDIS_PID
+    echo "Temporary Redis instance shutdown complete."
 } || exit 1
+
+# Add delay before mv command
+echo "Waiting 2 seconds before moving redis.conf..."
+sleep 2
 
 # Start Redis Stack with full configuration
 echo "Starting Redis Stack Server with full configuration..."
