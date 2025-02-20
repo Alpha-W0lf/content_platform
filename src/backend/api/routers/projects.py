@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -13,19 +13,36 @@ from src.backend.schemas.project import (
     ProjectStatus,
     ProjectUpdate,
 )
+from src.backend.tasks.broker_test import test_broker_settings
 from src.backend.tasks.project_tasks import redis_interaction_test, test_task
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
+@router.get("/test-broker")
+async def test_redis_broker() -> Dict[str, Any]:
+    """
+    Test Redis broker settings and authentication.
+    Returns detailed diagnostics about the Redis connection.
+    """
+    result = test_broker_settings.delay()
+    return result.get(timeout=10)  # Wait up to 10 seconds for results
+
+
 @router.get("/test-tasks")
-async def run_test_tasks():
+async def run_test_tasks() -> Dict[str, str]:
     """
-    Runs test tasks for debugging.
+    Run test tasks for debugging Redis connection.
     """
-    task1 = redis_interaction_test.delay()
-    task2 = test_task.delay(2, 2)
-    return {"redis_interaction_test": task1.id, "test_task": task2.id}
+    redis_test = redis_interaction_test.delay()
+    task_test = test_task.delay(2, 2)
+
+    return {
+        "redis_interaction_test": redis_test.id,
+        "test_task": task_test.id,
+        "redis_result": redis_test.get(timeout=10),  # Wait up to 10 seconds
+        "task_result": str(task_test.get(timeout=10)),
+    }
 
 
 @router.post("/", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)

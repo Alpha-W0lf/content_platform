@@ -6,11 +6,12 @@ Create Date: 2025-02-12 17:31:03.159223+00:00
 
 """
 
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union  # Import Optional
 
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.engine import Connection  # Import Connection
 
 from src.backend.schemas.project import ProjectStatus
 
@@ -21,7 +22,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-def upgrade(connection=None) -> None:
+def upgrade(connection: Optional[Connection] = None) -> None:
     op.create_table(
         "projects",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
@@ -66,6 +67,6 @@ def upgrade(connection=None) -> None:
     )
 
 
-def downgrade(connection=None) -> None:
+def downgrade(connection: Optional[Connection] = None) -> None:
     op.drop_table("assets")
     op.drop_table("projects")

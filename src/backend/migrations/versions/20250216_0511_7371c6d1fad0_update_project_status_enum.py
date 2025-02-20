@@ -16,7 +16,10 @@ branch_labels: str | None = None
 depends_on: str | None = None
 
 
-def upgrade(connection: Connection = None) -> None:
+from typing import Optional
+
+
+def upgrade(connection: Optional[Connection] = None) -> None:
     if connection is None:
         from alembic import op
 
@@ -47,7 +50,7 @@ def upgrade(connection: Connection = None) -> None:
         connection.execute(text(query))
 
 
-def downgrade(connection: Connection = None) -> None:
+def downgrade(connection: Optional[Connection] = None) -> None:
     if connection is None:
         from alembic import op
 

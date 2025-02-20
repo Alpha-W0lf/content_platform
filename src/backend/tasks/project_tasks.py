@@ -1,68 +1,154 @@
 # mypy: disable-error-code="import-untyped"
+import asyncio
 import logging
-import sys
-from typing import Any  # noqa: F401
+import os
+from datetime import datetime
+from typing import Any, Optional  # Import Any from typing
 
 import redis
+from celery import Task  # Import Task from celery
+from sqlalchemy import select
 from typing_extensions import ParamSpec
 
-from src.backend.models.project import Project  # noqa: F401
-from src.backend.schemas.project import ProjectStatus  # noqa: F401
+from src.backend.core.database import AsyncSessionLocal
+from src.backend.models.project import Project
+from src.backend.schemas.project import ProjectStatus
 from src.backend.tasks import celery_app
-
-print("Loading project_tasks.py")
-
-P = ParamSpec("P")
+from src.backend.tasks.debug_utils import debug_task
 
 logger = logging.getLogger(__name__)
+P = ParamSpec("P")
 
 
 @celery_app.task(name="redis_interaction_test")
+@debug_task
 def redis_interaction_test() -> str:
-    """
-    A simple task to test Redis interaction.
-    """
-    logger.debug("redis_interaction_test called")
+    """A task to test Redis interaction with enhanced debugging."""
     try:
+        # Get Redis configuration from environment
+        redis_password = os.getenv("REDIS_PASSWORD")
+        redis_url = os.getenv("CELERY_BROKER_URL")
+
+        logger.debug(
+            "Attempting Redis connection with URL pattern: "
+            f"{redis_url and redis_url.split('@')[0] + '@...'}"
+        )
+        logger.debug(
+            f"Redis password length: {len(redis_password) if redis_password else 0}"
+        )
+
+        # Try direct Redis connection
         r = redis.Redis(
             host="redis",
             port=6379,
             db=0,
-            password=celery_app.conf.broker_transport_options.get(
-                "password"
-            ),  # Use password from Celery config
+            password=redis_password,
+            username="default",
+            decode_responses=True,
+            socket_timeout=5,
+            socket_connect_timeout=5,
         )
-        logger.debug("Redis connection established")
-        r.set("testkey", "testvalue")
-        logger.debug("Set key 'testkey' to 'testvalue'")
-        value = r.get("testkey")
-        logger.debug(f"Got value for 'testkey': {value}")
-        return value.decode("utf-8") if value else "None"
-    except redis.exceptions.ConnectionError as e:
-        logger.error(f"Redis connection error: {e}")
-        return "Error"
+
+        # Test connection with PING
+        if not r.ping():
+            raise redis.ConnectionError("Redis PING failed")
+
+        # Try basic operations
+        test_key = f"test:connection:{datetime.utcnow().isoformat()}"
+        r.set(test_key, "testvalue", ex=60)  # 60 second expiry
+        value = r.get(test_key)
+        logger.info(f"Redis test successful - Key: {test_key}, Value: {value}")
+
+        # Get Redis info for debugging
+        redis_info = r.info()
+        logger.debug(f"Redis version: {redis_info.get('redis_version')}")
+        logger.debug(f"Connected clients: {redis_info.get('connected_clients')}")
+        logger.debug(f"Used memory: {redis_info.get('used_memory_human')}")
+
+        return "Success"
+
+    except redis.AuthenticationError as e:
+        logger.error(f"Redis authentication failed: {str(e)}")
+        url_pattern = redis_url and redis_url.split("@")[0] + "@..."
+        pwd_start = redis_password[:4] + "..." if redis_password else None
+        logger.debug(
+            "Redis connection details for debugging:",
+            extra={
+                "redis_url_pattern": url_pattern,
+                "password_length": len(redis_password) if redis_password else 0,
+                "password_starts_with": pwd_start,
+            },
+        )
+        return f"Auth Error: {str(e)}"
+    except redis.ConnectionError as e:
+        logger.error(f"Redis connection error: {str(e)}")
+        return f"Connection Error: {str(e)}"
     except Exception as e:
-        logger.exception(f"An unexpected error occurred: {e}")
-        return "Error"
+        logger.exception(f"Unexpected error in redis_interaction_test: {str(e)}")
+        return f"Error: {str(e)}"
 
 
 @celery_app.task(name="test_task")
+@debug_task
 def test_task(x: int, y: int) -> int:
     """A test task that adds two numbers."""
     logger.debug(f"test_task called with x={x}, y={y}")
-    logger.info(f"sys.path: {sys.path}")  # Print sys.path
     result = x + y
     logger.debug(f"test_task result: {result}")
     return result
 
 
 @celery_app.task(bind=True, name="process_project")
-def process_project(self, project_id: str) -> None:
+@debug_task
+async def process_project(self: Task[Any, Any], project_id: str) -> None:
     """
-    Process a project asynchronously.
+    Process a project asynchronously with enhanced error handling and status updates.
+
+    Args:
+        self: The Celery task instance
+        project_id: The UUID of the project to process
     """
-    logger.debug(f"process_project called with project_id={project_id}")
-    logger.debug(f"Task ID: {self.request.id}")
-    # Unused imports are kept because they will be used in the TODO implementation
-    # TODO: Implement actual project processing logic
-    pass
+    logger.info(f"Starting process_project for project_id: {project_id}")
+    project: Optional[Project] = None
+
+    # Create a new database session for this task
+    async with AsyncSessionLocal() as db:
+        try:
+            # Get the project
+            result = await db.execute(select(Project).where(Project.id == project_id))
+            project = result.scalar_one_or_none()
+
+            if project is None:
+                logger.error(f"Project not found: {project_id}")
+                return
+
+            # Update to PROCESSING
+            project.status = ProjectStatus.PROCESSING
+            await db.commit()
+            await db.refresh(project)
+            logger.info(f"Project {project_id} status updated to PROCESSING")
+
+            # Simulate work (replace with actual processing)
+            await asyncio.sleep(5)
+
+            # Update to COMPLETED
+            project.status = ProjectStatus.COMPLETED
+            await db.commit()
+            logger.info(f"Project {project_id} status updated to COMPLETED")
+
+        except Exception as e:
+            logger.exception(f"Error processing project {project_id}: {str(e)}")
+            await db.rollback()
+
+            if project:
+                try:
+                    project.status = ProjectStatus.ERROR
+                    await db.commit()
+                    logger.info(f"Project {project_id} status updated to ERROR")
+                except Exception as commit_error:
+                    logger.exception(
+                        f"Failed to update project status to ERROR: {str(commit_error)}"
+                    )
+
+            # Re-raise the exception for Celery
+            raise

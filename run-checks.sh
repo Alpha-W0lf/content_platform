@@ -28,4 +28,3 @@ if command -v pyright &> /dev/null; then
     echo "✅ pyright complete"
 fi
 echo "\n✨ All checks completed!"
-

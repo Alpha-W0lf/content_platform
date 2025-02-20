@@ -1,71 +1,92 @@
-#!/bin/sh
-set -ex
+#!/bin/bash
+set -e
 
-echo "Before setting up logging directory..."
+# Redirect all output to log file while maintaining console output
+exec 1> >(tee -a /var/log/redis/startup.log) 2>&1
+
+echo "=== Starting Redis Stack Server ==="
+echo "Time: $(date)"
+echo "Redis Version: $(redis-server --version)"
+
+# Verify environment variables
+echo "Checking environment variables..."
+if [ -z "$REDIS_PASSWORD" ]; then
+    echo "ERROR: REDIS_PASSWORD is not set"
+    exit 1
+fi
+
+echo "Redis password length: ${#REDIS_PASSWORD}"
+echo "Password starts with: ${REDIS_PASSWORD:0:4}..."
+
 # Setup logging directory with proper permissions
 echo "Setting up logging directory..."
 mkdir -p /var/log/redis
-echo "After mkdir /var/log/redis"
 LOG_FILE="/var/log/redis/redis-debug.log"
 touch "$LOG_FILE"
-echo "After touch logfile"
 chown -R redis:redis /var/log/redis
-echo "After chown /var/log/redis"
 
 # Create and set permissions for data directory
 echo "Setting up data directory..."
 mkdir -p /data
-echo "After mkdir /data"
 chown -R redis:redis /data
-echo "After chown /data"
 
 # Substitute environment variables in redis.conf
 echo "Substituting environment variables in redis.conf..."
-echo "REDIS_PASSWORD (before envsubst): $REDIS_PASSWORD"
 envsubst < /redis.conf > /tmp/redis.conf
-echo "After envsubst"
-echo "Contents of /tmp/redis.conf (after envsubst):"
-cat /tmp/redis.conf
-echo "After cat /tmp/redis.conf"
 mv /tmp/redis.conf /redis.conf
-echo "After mv /tmp/redis.conf"
-echo "Contents of /redis.conf (final):"
-cat /redis.conf
-echo "After cat /redis.conf"
 
-# Check Redis binary
-REDIS_SERVER="/usr/bin/redis-stack-server"
-echo "Checking Redis binary at $REDIS_SERVER..."
-if [ ! -x "$REDIS_SERVER" ]; then
-    echo "ERROR: $REDIS_SERVER not found or not executable"
-    ls -l /usr/bin/redis* || true
-    ls -l /opt/redis-stack/bin/redis* || true
-    exit 1
-fi
-
-echo "Before getting Redis version..."
-# Log Redis version
-echo "Getting Redis version..."
-"$REDIS_SERVER" -v || {
-    echo "ERROR: Cannot get Redis version"
+# Test Redis configuration file
+echo "Testing Redis configuration..."
+redis-server /redis.conf --test-memory 1024 || {
+    echo "ERROR: Redis configuration test failed"
     exit 1
 }
-echo "After getting Redis version..."
 
-echo "Before checking Redis configuration file..."
-# Check configuration file
-echo "Checking Redis configuration file..."
-ls -l /redis.conf || {
-    echo "ERROR: /redis.conf not found"
-    exit 1
-}
-echo "After checking Redis configuration file..."
+# Initialize Redis with default user and ACL
+echo "Initializing Redis ACLs..."
+{
+    redis-server /redis.conf --protected-mode no &
+    REDIS_PID=$!
+    
+    # Wait for Redis to start
+    echo "Waiting for Redis to start..."
+    until redis-cli ping &>/dev/null; do
+        sleep 1
+    done
+    
+    echo "Setting up default user..."
+    redis-cli ACL SETUSER default on ">${REDIS_PASSWORD}" ~* &* +@all || {
+        echo "ERROR: Failed to set up default user"
+        kill $REDIS_PID
+        exit 1
+    }
+    
+    # Verify authentication
+    echo "Verifying authentication..."
+    if redis-cli -a "$REDIS_PASSWORD" ping | grep -q "PONG"; then
+        echo "Authentication test successful"
+    else
+        echo "ERROR: Authentication test failed"
+        kill $REDIS_PID
+        exit 1
+    fi
+    
+    # Clean shutdown
+    redis-cli shutdown
+    wait $REDIS_PID
+} || exit 1
 
-# Log the final configuration before starting Redis
-echo "Logging final Redis configuration to /var/log/redis/final_redis.conf"
-cat /redis.conf > /var/log/redis/final_redis.conf
-echo "After logging final Redis configuration..."
-# Start Redis Stack Server with configuration
-echo "Starting Redis Stack Server..."
-exec "$REDIS_SERVER" /redis.conf "$@" 2>&1 | tee -a "$LOG_FILE"
-sleep infinity
+# Start Redis Stack with full configuration
+echo "Starting Redis Stack Server with full configuration..."
+echo "Configuration file: /redis.conf"
+echo "Log file: /var/log/redis/redis.log"
+
+# Monitor Redis logs in background
+tail -f /var/log/redis/redis.log | grep --line-buffered -E "Authentication|ACL|ERROR|DENIED" &
+
+# Start Redis Stack Server
+exec redis-stack-server /redis.conf \
+    --loglevel debug \
+    --logfile /var/log/redis/redis.log \
+    --requirepass "${REDIS_PASSWORD}" \
+    --user default on "${REDIS_PASSWORD}" ~* &* +@all

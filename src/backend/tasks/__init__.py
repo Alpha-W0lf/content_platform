@@ -15,9 +15,7 @@ logger.setLevel(logging.DEBUG)
 
 # Log the file path and additional environment variables
 logger.debug(f"__file__: {__file__}")
-logger.debug(
-    f"REDIS_PASSWORD (before Celery init): {os.getenv('REDIS_PASSWORD')}"
-)
+logger.debug(f"REDIS_PASSWORD (before Celery init): {os.getenv('REDIS_PASSWORD')}")
 
 # Log current working directory
 logger.debug(f"Current working directory: {os.getcwd()}")

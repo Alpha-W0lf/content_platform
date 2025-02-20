@@ -79,6 +79,12 @@ RUN echo "\n=== Python Environment ===" | tee /app/celery_logs/07_python_env.log
     echo "\nEnvironment Variables:" | tee -a /app/celery_logs/07_python_env.log && \
     env | sort | tee -a /app/celery_logs/07_python_env.log
 
+# Debug: Print Docker Compose environment variables
+RUN echo "\n=== Docker Compose Env Vars ===" | tee /app/celery_logs/08_docker_compose_env.log && \
+    echo "REDIS_PASSWORD: $REDIS_PASSWORD" | tee -a /app/celery_logs/08_docker_compose_env.log && \
+    echo "CELERY_BROKER_URL: $CELERY_BROKER_URL" | tee -a /app/celery_logs/08_docker_compose_env.log && \
+    echo "CELERY_RESULT_BACKEND: $CELERY_RESULT_BACKEND" | tee -a /app/celery_logs/08_docker_compose_env.log
+
 # Enhanced healthcheck with logging
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD celery -A src.backend.tasks inspect ping -quiet 2>&1 | tee -a /app/celery_logs/healthcheck.log || exit 1
