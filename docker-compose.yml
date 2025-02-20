@@ -13,7 +13,7 @@ services:
       - postgres
       - redis
     env_file:
-      - .env.backend
+      - .env
     environment:
       - PYDEVD_DISABLE_FILE_VALIDATION=1 # Keep this, it's specific to debugging
     networks:
@@ -40,7 +40,7 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env.backend
+      - .env
     environment:
       - PYDEVD_DISABLE_FILE_VALIDATION=1 # Keep this
     networks:
@@ -100,7 +100,7 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     command:
-      ["redis-stack-server", "/redis.conf", "--verbose", "--loglevel", "debug"]
+      ["redis-stack-server", "/redis.conf", "--loglevel", "debug"]
     healthcheck:
       test: ["CMD", "/healthcheck.sh"]
       interval: 5s
@@ -181,7 +181,7 @@ services:
     ports:
       - "0.0.0.0:3000:3000"
     env_file:
-      - .env.frontend
+      - .env
     environment:
       - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}

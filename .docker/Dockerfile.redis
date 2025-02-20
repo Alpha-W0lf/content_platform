@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     htop \
     net-tools \
     curl \
+    iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Debug: Print system information
