@@ -99,7 +99,6 @@ services:
       - content-platform
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_PASSWORD="" # Explicitly set to empty
     command:
       ["redis-stack-server", "/redis.conf", "--verbose", "--loglevel", "debug"]
     healthcheck:
