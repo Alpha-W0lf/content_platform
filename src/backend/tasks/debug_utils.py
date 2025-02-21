@@ -156,6 +156,7 @@ def on_task_postrun(
     state: Optional[str] = None,
     *args: Any,
     kwargs: Optional[dict[str, Any]] = None,
+    **kwds: Any,
 ) -> None:
     if task and task_id:
         logger.debug(
