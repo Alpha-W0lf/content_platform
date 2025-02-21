@@ -125,7 +125,11 @@ services:
     volumes:
       - redis_data:/data
       - ./logs/redis:/var/log/redis:rw
-      - ./config/redis/redis.conf:/redis.conf:rw
+      - type: bind
+        source: ./config/redis/redis.conf
+        target: /redis.conf
+        bind:
+          create_host_path: true
       - ./config/redis/docker-entrypoint.sh:/docker-entrypoint.sh:ro
     networks:
       - content-platform
