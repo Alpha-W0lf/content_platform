@@ -13,6 +13,7 @@ from src.backend.schemas.project import ProjectStatus
 
 @pytest.mark.asyncio
 async def test_create_project(db_session: AsyncSession) -> None:
+    start_time = datetime.now(timezone.utc)
     project = Project(
         id=uuid.uuid4(),
         topic="Test Topic",
@@ -30,6 +31,8 @@ async def test_create_project(db_session: AsyncSession) -> None:
     assert saved_project.name == "Test Project"
     assert saved_project.notes == "Test Notes"
     assert saved_project.status == ProjectStatus.CREATED
+    assert saved_project.created_at >= start_time
+    assert saved_project.updated_at >= start_time
 
 
 @pytest.mark.asyncio
@@ -76,7 +79,7 @@ async def test_project_asset_relationship(db_session: AsyncSession) -> None:
     result = await db_session.execute(
         select(Project).filter_by(id=project.id).options(joinedload(Project.assets))
     )
-    saved_project = result.scalar_one()
+    saved_project = result.unique().scalar_one()  # Added unique() call
     assert len(saved_project.assets) == 2
     assert all(isinstance(asset, Asset) for asset in saved_project.assets)
     assert any(asset.asset_type == "script" for asset in saved_project.assets)

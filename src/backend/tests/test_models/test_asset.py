@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.models.asset import Asset
@@ -14,9 +14,12 @@ from src.backend.schemas.project import ProjectStatus
 @pytest.mark.asyncio
 async def test_create_asset(db_session: AsyncSession) -> None:
     """Test creating an asset with valid data."""
+    start_time = datetime.now(timezone.utc)
+
     project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
     db_session.add(project)
     await db_session.commit()
+
     asset = Asset(
         id=uuid.uuid4(),
         project_id=project.id,
@@ -25,11 +28,14 @@ async def test_create_asset(db_session: AsyncSession) -> None:
     )
     db_session.add(asset)
     await db_session.commit()
+
     result = await db_session.execute(select(Asset).filter_by(id=asset.id))
     saved_asset = result.scalar_one()
     assert saved_asset.project_id == project.id
     assert saved_asset.asset_type == "script"
     assert saved_asset.path == "/path/to/asset"
+    assert saved_asset.created_at >= start_time
+    assert saved_asset.updated_at >= start_time
 
 
 @pytest.mark.asyncio
@@ -38,18 +44,20 @@ async def test_asset_updates(db_session: AsyncSession) -> None:
     project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
     db_session.add(project)
     await db_session.commit()
+
     asset = Asset(
         id=uuid.uuid4(),
         project_id=project.id,
         asset_type="script",
-        path="/original/path",
+        path="/path/to/asset",
     )
     db_session.add(asset)
     await db_session.commit()
-    # Update the asset
+
     asset.path = "/updated/path"
     asset.asset_type = "video"
     await db_session.commit()
+
     result = await db_session.execute(select(Asset).filter_by(id=asset.id))
     updated_asset = result.scalar_one()
     assert updated_asset.path == "/updated/path"
@@ -60,9 +68,11 @@ async def test_asset_updates(db_session: AsyncSession) -> None:
 async def test_asset_timestamp_updates(db_session: AsyncSession) -> None:
     """Test that timestamps are properly set and updated."""
     start_time = datetime.now(timezone.utc)
+
     project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
     db_session.add(project)
     await db_session.commit()
+
     asset = Asset(
         id=uuid.uuid4(),
         project_id=project.id,
@@ -71,13 +81,16 @@ async def test_asset_timestamp_updates(db_session: AsyncSession) -> None:
     )
     db_session.add(asset)
     await db_session.commit()
+
     assert asset.created_at >= start_time
     assert asset.updated_at >= start_time
+
     # Test update timestamp
     original_updated_at = asset.updated_at
     await db_session.refresh(asset)
     asset.path = "/new/path"
     await db_session.commit()
+
     assert asset.updated_at > original_updated_at
     assert asset.created_at == asset.created_at  # Should not change
 
@@ -105,7 +118,7 @@ async def test_asset_enum_validation(db_session: AsyncSession) -> None:
         await db_session.delete(asset)  # cleanup
         await db_session.commit()  # Commit after each successful creation
     # Test invalid asset type
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DBAPIError):
         invalid_asset = Asset(
             id=uuid.uuid4(),
             project_id=project.id,

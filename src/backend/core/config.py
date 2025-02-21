@@ -8,10 +8,25 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Content Platform"
     API_VERSION: str = "v0.0"
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/content_platform"
+        default=(
+            "postgresql+asyncpg://user:password@localhost:5432/"
+            "content_platform?timezone=utc"
+        )
     )
-    TEST_DATABASE_URL: str = Field(default="")  # Will be set by validator
+    TEST_DATABASE_URL: str = Field(default="")
     REDIS_URL: Optional[str] = None
+
+    @field_validator("TEST_DATABASE_URL", mode="before")
+    def set_test_database_url(cls, v: Optional[str], info: ValidationInfo) -> str:
+        if not v:
+            # If TEST_DATABASE_URL is not set, derive it from DATABASE_URL
+            base_url: str = str(info.data.get("DATABASE_URL", ""))
+            # Replace localhost with postgres for testing since we're running in Docker
+            test_url = base_url.replace("localhost", "postgres").replace(
+                "content_platform", "test_content_platform"
+            ) + "?timezone=utc"  # Add timezone here
+            return test_url
+        return v
     CELERY_BROKER_URL: str = Field(default="redis://redis:6379/0")
     CELERY_RESULT_BACKEND: str = Field(default="redis://redis:6379/0")
     CLERK_SECRET_KEY: Optional[str] = None
@@ -28,18 +43,6 @@ class Settings(BaseSettings):
     # Add Heygen credentials
     heygen_email: Optional[str] = None
     heygen_password: Optional[str] = None
-
-    @field_validator("TEST_DATABASE_URL", mode="before")
-    def set_test_database_url(cls, v: Optional[str], info: ValidationInfo) -> str:
-        if not v:
-            # If TEST_DATABASE_URL is not set, derive it from DATABASE_URL
-            base_url: str = str(info.data.get("DATABASE_URL", ""))
-            # Replace localhost with postgres for testing since we're running in Docker
-            test_url = base_url.replace("localhost", "postgres").replace(
-                "content_platform", "test_content_platform"
-            )
-            return test_url
-        return v
 
     @field_validator("CELERY_BROKER_URL", "CELERY_RESULT_BACKEND", mode="before")
     def set_celery_urls(cls, v: Optional[str], info: ValidationInfo) -> str:
