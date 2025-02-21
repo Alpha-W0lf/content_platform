@@ -1,11 +1,11 @@
 import logging
 import os
 from functools import wraps
-from typing import cast  # Import cast moved to its own line
+from typing import cast
 from typing import Any, Callable, Dict, Optional, ParamSpec, TypeVar
 
 import redis
-from celery import Task  # Import Task from celery
+from celery import Task
 from celery.signals import (
     after_setup_logger,
     before_task_publish,
@@ -16,16 +16,21 @@ from celery.signals import (
     worker_ready,
 )
 
+# Create a logger without handlers initially
 logger = logging.getLogger("celery.tasks.debug")
+logger.propagate = False  # Prevent duplicate logging
 
 
 def setup_task_logger(loglevel: int = logging.DEBUG) -> None:
     """Configure task-specific logger"""
+    # Remove any existing handlers
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
     handler = logging.FileHandler("/app/celery_logs/worker.log")
     handler.setLevel(loglevel)
     formatter = logging.Formatter(
-        "[%(asctime)s: %(levelname)s/%(processName)s] "
-        "[%(task_name)s(%(task_id)s)] %(message)s"
+        "[%(asctime)s: %(levelname)s/%(processName)s] " "[%(task_id)s] %(message)s"
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)

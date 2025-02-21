@@ -3,10 +3,9 @@ import asyncio
 import logging
 import os
 from datetime import datetime
-from typing import Any, Optional  # Import Any from typing
+from typing import Optional
 
 import redis
-from celery import Task  # Import Task from celery
 from sqlalchemy import select
 from typing_extensions import ParamSpec
 
@@ -100,7 +99,7 @@ def test_task(x: int, y: int) -> int:
 
 @celery_app.task(bind=True, name="process_project")
 @debug_task
-async def process_project(self: Task[Any, Any], project_id: str) -> None:
+async def process_project(self, project_id: str) -> None:
     """
     Process a project asynchronously with enhanced error handling and status updates.
 

@@ -68,21 +68,25 @@ def test_redis_connection(sender: Any, instance: Any, **kwargs: Any) -> None:
 
 
 # Enhanced logging configuration
-worker_hijack_root_logger = False
+worker_hijack_root_logger = True  # Changed to True to properly handle redirected logs
 worker_log_color = True
 worker_log_format = (
     "[%(asctime)s: %(levelname)s/%(processName)s] [%(name)s] %(message)s"
 )
 worker_task_log_format = (
     "[%(asctime)s: %(levelname)s/%(processName)s] "
-    "[%(task_name)s(%(task_id)s)] [%(name)s] "
-    "Runtime: %(runtime)s seconds - %(message)s"
+    "[%(task_id)s] [%(name)s] "
+    "%(message)s"
 )
 
 # Debug logging setup
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format=worker_log_format)
 logger = logging.getLogger("celery")
 logger.setLevel(logging.DEBUG)
+
+# Prevent duplicate logging
+for handler in logging.root.handlers:
+    handler.addFilter(lambda record: record.name != "celery")
 
 # Print connection details for debugging
 print(f"Celery broker URL pattern: {broker_url.split('@')[0]}@...")

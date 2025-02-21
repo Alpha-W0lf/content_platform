@@ -1,22 +1,28 @@
 #!/bin/bash
 set -e
-# Debug logging for wget calls
-log_and_wget() {
-    echo "DEBUG: Attempting to fetch URL: $1" >&2
-    wget "$1"
-    RETVAL=$?
-    if [ $RETVAL -ne 0 ]; then
-        echo "ERROR: wget failed with exit code $RETVAL for URL: $1" >&2
-    fi
-    return $RETVAL
-}
-set -e
 
-# Wait for PostgreSQL to be ready by checking Grafana's health endpoint.
+# Start Grafana in the background
+/run.sh "$@" &
+GRAFANA_PID=$!
+
+# Wait for Grafana to be ready
 echo "Waiting for Grafana to be ready..."
-until wget --spider -q "http://localhost:3000/api/health"; do
-  sleep 2
+max_attempts=30
+attempt=0
+
+until wget --spider -q "http://localhost:3000/api/health" || [ $attempt -ge $max_attempts ]; do
+    attempt=$((attempt + 1))
+    echo "Attempt $attempt/$max_attempts: Waiting for Grafana to start..."
+    sleep 2
 done
 
-echo "Grafana is ready, starting..."
-exec /run.sh
+if [ $attempt -ge $max_attempts ]; then
+    echo "ERROR: Grafana failed to start after $max_attempts attempts"
+    kill $GRAFANA_PID
+    exit 1
+fi
+
+echo "Grafana is ready!"
+
+# Wait for the Grafana process
+wait $GRAFANA_PID

@@ -26,6 +26,16 @@ services:
       start_period: 40s
     restart: unless-stopped
     user: "501:20"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        tag: "{{.Name}}"
+        labels: "api"
+        env: "prod"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
 
   celery_worker:
     build:
@@ -71,6 +81,12 @@ services:
       -E"
     networks:
       - content-platform
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A src.backend.tasks inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -113,6 +129,16 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        tag: "{{.Name}}"
+        labels: "postgres"
+        env: "prod"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
 
   redis:
     build:
@@ -175,6 +201,16 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        tag: "{{.Name}}"
+        labels: "prometheus"
+        env: "prod"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
 
   grafana:
     image: grafana/grafana:11.5.1
@@ -208,6 +244,16 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        tag: "{{.Name}}"
+        labels: "grafana"
+        env: "prod"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
     user: "472:472"
 
   frontend:
@@ -240,12 +286,22 @@ services:
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] #This will likely need to be updated
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        tag: "{{.Name}}"
+        labels: "frontend"
+        env: "prod"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
     user: "node"
 
 networks:
