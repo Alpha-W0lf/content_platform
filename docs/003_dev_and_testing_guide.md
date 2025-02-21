@@ -1,17 +1,15 @@
-# Content Platform Development Guide - Part 2: PATCH Endpoint and Error Handling
+# Content Platform Development Guide - Part 3: Task Testing and Request Logging
 
-This is Part 2 of 4 in the Content Platform Development Guide series:
+This is Part 3 of 4 in the Content Platform Development Guide series:
 
 - Part 1: Project Setup and Initial API/Model Tests
-- Part 2 (Current): PATCH Endpoint and Error Handling
-- Part 3: Task Testing and Request Logging
+- Part 2: PATCH Endpoint and Error Handling
+- Part 3 (Current): Task Testing and Request Logging
 - Part 4: Task Error Handling and Frontend Integration
-
-Okay, let's move on to the next part, which focuses on expanding the API tests to include the PATCH /projects/{id} endpoint and enhancing error handling, particularly around database operations.
 
 # Content Platform Development and Testing Guide
 
-This part builds on the previous part, adding tests for the `PATCH /projects/{id}` endpoint and enhancing error handling.
+This part builds on the previous part, adding tests for Celery tasks and implementing request logging middleware.
 
 **Remember to always:**
 
@@ -19,143 +17,259 @@ This part builds on the previous part, adding tests for the `PATCH /projects/{id
 - **Maintainable Code:** Write code that is easy to understand, modify, and extend. Use comments where necessary to explain _why_ you're doing something, not just _what_.
 - **Targeted Changes:** Make small, incremental changes. Commit frequently with descriptive commit messages.
 - **Modularity and Extensibility:** Design your code with future features in mind. Think about how new functionality will be added and how existing components can be reused. Use dependency injection and clearly defined interfaces.
-- **Test Driven Development**: Write tests before code.
+- **Test Driven Development:** Write tests before code.
 
 ## Task Tracking (v0.0 Foundation)
 
 ### Implemented ✓
 
+(All items from previous parts)
+
+- [x] Project structure and directory setup
+- [x] Database Setup
+- [x] API Setup
+- [x] Authentication
+- [x] Frontend Foundation
+- [x] Task Queue
+- [x] Linting and Formatting
+- [x] Testing Infrastructure
 - [x] API Tests (`src/backend/tests/test_api/test_projects.py`)
+  - [x] `/projects` POST endpoint
+  - [x] `/projects/{id}` GET endpoint
+  - [x] `/projects/{id}/status` GET endpoint
+  - [x] `/projects` GET (list) endpoint
   - [x] `/projects/{id}` PATCH endpoint
-    - [x] Basic field updates (topic, notes)
-    - [x] Status updates
-    - [x] Not found case
-    - [x] Invalid status value
-    - [x] Partial updates (only updating some fields)
-    - [x] Edge cases (empty strings, etc.)
-- [x] Error Handling (Enhancements)
-  - [x] Database Operations (in `projects.py`)
-    - [x] Connection errors (`OperationalError` handling _implemented_, direct automated testing deferred)
-    - [x] Transaction errors (rollback on exception)
+- [x] Model Tests
+  - [x] Project model
+  - [x] Asset model
+- [x] **Task Tests**
+
+  - [x] Celery configuration tests
+  - [x] Task execution tests (`test_task`)
+  - [ ] Task error handling
+
+- [x] Error Handling
+  - [x] Database Operations
+    - [x] Connection errors
+    - [x] Transaction errors
+  - [x] API Endpoints
+    - [x] Input validation
+    - [x] Not found handling
 
 ### In Progress 🚧
 
-- [ ] API Tests (`src/backend/tests/test_api/test_projects.py`)
+- [ ] **Task Tests** _<-- Focus here next_
 
-  - [ ] `/projects/{id}` PATCH endpoint
-    - [ ] Error case coverage: `OperationalError` (Automated testing deferred; manual testing recommended for now. See Section 2.2 for details.)
+  - [ ] Task error handling
 
 - [ ] Error Handling (Enhancements)
-  - [ ] Database Operations (in `projects.py`)
-    - [ ] Constraint violations
+
   - [ ] API Endpoints
     - [ ] Conflict handling
+  - [ ] Task Processing
+    - [ ] Task failure handling _<-- Integrate with task tests_
+    - [ ] Retry logic _<-- Add when you have retries_
+    - [ ] Status updates
+
+- [x] **Logging System**
+  - [x] JSON logging setup
+  - [x] Log levels configuration
+  - [x] Request logging (middleware) _<-- Implement middleware_
+  - [x] Error logging
+  - [ ] Task logging _<-- Add when implementing tasks_
 
 ### Next Steps 📋
 
-1.  **Database Connection Error Test (Tricky):** Discuss strategy for testing `OperationalError`.
-2.  **API Endpoint Enhancement:** Add conflict handling to the API endpoints.
-3.  **Error Handling Documentation:** Document error handling patterns and best practices.
+1.  **Complete Task Tests:** Focus on `process_project` task testing (basic execution, and error handling when you add more logic).
+2.  **Implement Task Failure Handling and Status Updates:** Integrate error handling and status updates into the `process_project` task.
+3.  **Add Celery Task Logging:**
+4.  **Conflict Handling (API):** Consider adding conflict handling to your API (e.g., for duplicate project topics, if you add a unique constraint).
+5.  **Start Connecting Frontend:** Once the backend is more solid, begin making API calls from your Next.js frontend.
 
-## 1. PATCH Endpoint Tests (Review)
+## 1. Celery Task Tests
 
-You should already have comprehensive tests for the `PATCH` endpoint in `src/backend/tests/test_api/test_projects.py`, covering:
+You've already set up the basic structure for Celery task tests in `src/backend/tests/test_tasks/test_project_tasks.py`. Review this file and ensure it's consistent with the example provided in previous responses:
 
-- Successful updates (topic, notes, status).
-- Partial updates (only updating some fields).
-- Not found (404) case.
-- Invalid status value (422).
-- Edge cases (empty strings).
+```python
+# src/backend/tests/test_tasks/test_project_tasks.py
+import pytest
+from src.backend.tasks.project_tasks import celery, test_task, process_project  # Import your tasks
+from celery.result import AsyncResult
 
-Make sure these tests are present and passing. Refer to the complete `test_projects.py` file provided in the previous response if needed.
+@pytest.fixture(scope="session")
+def celery_config():
+    return {
+        'broker_url': 'memory://',  # Use in-memory broker for testing
+        'result_backend': 'rpc://',  # Use RPC result backend for testing
+        'task_always_eager': True,  # Run tasks synchronously
+        'task_eager_propagates': True,
+    }
 
-## 2. Enhanced Error Handling and Testing
+@pytest.mark.celery
+def test_test_task(celery_app):
+    result = test_task.delay(2, 3)
+    assert result.get() == 5
+    assert result.successful()
 
-### 2.1. `OperationalError` Handling (Review)
+@pytest.mark.celery
+def test_process_project_task(celery_app):
+    # For now, this will just check that the task runs without error.
+    # As you implement project processing steps, you can add assertions
+    # to verify the behavior.
+    result = process_project.delay("a-fake-project-id")
+    assert result.successful()
+    # TODO: Add assertions about database state changes, etc.
+    #       once you implement the task logic.
 
-You've already added `OperationalError` handling to your API endpoints in `src/backend/api/routers/projects.py`. This is excellent. Review the code to ensure:
+# Example of testing a task failure (when you have error handling)
+# @pytest.mark.celery
+# def test_process_project_task_failure(celery_app):
+#     with pytest.raises(Exception):  # Replace with your expected exception
+#         result = failing_task.delay()
+#         result.get()  # This will raise the exception if the task failed
+#     assert result.failed()
+```
 
-- You're catching `sqlalchemy.exc.OperationalError` in a `try...except` block _around your database operations_.
-- You're rolling back the transaction (`await db.rollback()`).
-- You're logging the error with `logger.error`, including `exc_info=True`.
-- You're raising an `HTTPException` with a `500` status code and a user-friendly message (e.g., "Database connection error").
+**Key Points (Review):**
 
-### 2.2. Testing `OperationalError` (The Challenge)
+- **`celery_config` fixture:** Ensures tasks run synchronously during tests.
+- **`@pytest.mark.celery`:** Marks tests that require the Celery app.
+- **`test_task`:** A simple test to verify Celery is working.
+- **`test_process_project_task`:** A placeholder for testing your main task. Right now, it just checks for successful execution (no errors). You'll add more assertions later as you implement the task's functionality.
 
-As we discussed, directly testing `OperationalError` with `httpx.AsyncClient` and your in-memory test database is difficult. Here are the best approaches, ordered from simplest to most complex:
+**Running Celery Tests:**
 
-**Option 1: Focus on Logging (Simplest - Recommended for Now):**
+```bash
+docker-compose run api pytest -v src/backend/tests/test_tasks
+```
 
-- **Don't try to _force_ a connection error in your unit tests.** It's too complex and brittle for this stage.
-- **Focus on verifying that your _error handling code is present and correctly structured_.** You've already done this by ensuring the `try...except` blocks, logging, and `HTTPException` are in place.
-- **Add a simple _manual_ test:**
-  1.  Temporarily modify your `DATABASE_URL` in your `.env` file to point to a _non-existent_ database (e.g., change the database name to something that doesn't exist).
-  2.  Run your application _outside_ of the test suite (just start it with `docker-compose up`).
-  3.  Try to make a request to an API endpoint.
-  4.  Verify that you see a "Database connection error" message in the response and a detailed error log in your console output (because you're using structured logging).
-  5.  **Change the `DATABASE_URL` back to the correct value!**
-- This approach doesn't give you automated test coverage of the connection error, but it gives you _confidence_ that the error handling logic will work as expected in a real-world scenario.
+## 2. Request Logging Middleware
 
-**Option 2: Mocking (More Advanced):**
+Let's add middleware to your FastAPI application to automatically log all incoming requests. This is invaluable for debugging and monitoring.
 
-- Use the `unittest.mock` library (or `pytest-mock`) to replace the database connection with a mock object.
-- Configure the mock to raise an `OperationalError` when you call a database operation (e.g., `await db.execute(...)`).
-- This allows you to test the error handling code _within_ your unit tests.
-- **Example (Conceptual - requires `pytest-mock`):**
+**Modify `src/backend/main.py`:**
 
-  ```python
-  import pytest
-  from sqlalchemy.ext.asyncio import AsyncSession
-  from sqlalchemy.exc import OperationalError
-  from unittest.mock import AsyncMock  # Use AsyncMock for async functions
+```python
+# src/backend/main.py
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Dict
+import time
+import uuid
 
-  @pytest.mark.asyncio
-  async def test_create_project_database_error(client: AsyncClient, mocker):
-      # Mock the db.execute method to raise an OperationalError
-      mock_execute = AsyncMock(side_effect=OperationalError("Simulated DB Error", None, None))
-      mocker.patch("src.backend.core.database.AsyncSession.execute", mock_execute) #Correct path
+from fastapi import FastAPI, Request, Response  # Import Request and Response
+from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+import logging
+from pythonjsonlogger import jsonlogger  # Import jsonlogger
 
-      data = {"topic": "Test Topic", "notes": "Test Notes"}
-      response = await client.post("/api/v1/projects/", json=data)
 
-      assert response.status_code == 500
-      assert response.json() == {"detail": "Database connection error"}
-      mock_execute.assert_called_once()  # Verify that the mocked method was called
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Startup
+    Instrumentator().instrument(app).expose(app)
+    yield
+    # Shutdown
 
-  ```
 
-  - You would need to adapt this to mock the `db.add`, `db.commit`, etc., methods as appropriate.
-  - This approach is more complex, but it provides true unit test coverage of your error handling.
+app = FastAPI(
+    title=settings.PROJECT_NAME, version=settings.API_VERSION, lifespan=lifespan
+)
 
-**Option 3: Separate Integration/System Tests (Most Complex):**
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # TODO: Configure this properly for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-- Create a completely separate set of tests that run against a _real_ (but disposable) PostgreSQL database.
-- These tests would be run _outside_ of your main `pytest` run (e.g., in a separate CI/CD job).
-- You could use a tool like Docker Compose to start a temporary PostgreSQL instance for these tests.
-- You could then deliberately disrupt the database connection (e.g., stop the PostgreSQL container) to trigger the `OperationalError`.
+# --- JSON Logging Setup ---
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-**Recommendation:**
+logHandler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter('%(asctime)s %(levelname)s %(name)s %(message)s')
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+# --- End JSON Logging Setup ---
 
-For v0.0, I strongly recommend sticking with **Option 1 (Focus on Logging)**. It's the simplest and most pragmatic approach for now. You can add mocking or separate integration tests later as your project matures. The key is to have the error handling logic _in place_, even if you're not exhaustively testing every possible database error scenario at this stage.
+# --- Request Logging Middleware ---
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    idem = uuid.uuid4()
+    logger.info(f"Request started: {request.method} {request.url.path} id={idem}")
 
-## 3. Next Steps (Checklist)
+    start_time = time.time()
+    response: Response = await call_next(request)  # Call the next middleware/route handler
+    end_time = time.time()
 
-1.  **Review `projects.py`:** Ensure your API endpoints have the `OperationalError` handling as described above.
-2.  **Run all tests:** `docker-compose run api pytest -v`
-3.  **Manual Test:** perform a quick manual test to see error messages as described above.
+    process_time = (end_time - start_time) * 1000
+    formatted_process_time = f"{process_time:.2f}"
 
-Once you've done this, we can move on to the next part, which will cover Celery task testing and request logging middleware.
-content_copy
-download
-Use code with caution.
-Markdown
+    logger.info(
+        f"Request finished: {request.method} {request.url.path} id={idem}",
+        extra={
+            "http.status_code": response.status_code,
+            "http.method": request.method,
+            "http.path": request.url.path,
+            "http.duration": formatted_process_time,
+        },
+    )
 
-Key Changes in this guide:
+    return response
+# --- End Request Logging Middleware ---
 
-Focus on PATCH endpoint tests: We're ensuring that the PATCH endpoint is thoroughly tested.
+# Include routers
+app.include_router(projects.router, prefix="/api/v1", tags=["projects"])
 
-Enhanced Error Handling: Adding specific OperationalError handling to all API endpoints.
 
-OperationalError Testing Strategy: Clearly outlining the options for testing database connection errors, with a recommendation to focus on logging for now.
+@app.get("/health")
+async def health_check() -> Dict[str, str]:
+    return {"status": "healthy"}
 
-Model testing is done: the model testing portion of the In Progress section is complete.
+```
+
+Key Changes:
+
+- **Import `Request` and `Response`:** Added `from fastapi import Request, Response`.
+- **`log_requests` Middleware:**
+
+  - `@app.middleware("http")`: This decorator registers the function as middleware that will be executed for every HTTP request.
+  - `async def log_requests(request: Request, call_next):`: The middleware function takes the `Request` object and a `call_next` function (which calls the next middleware or the route handler).
+  - `idem = uuid.uuid4()`: Generates a unique ID for each request. This is very useful for tracing requests through your logs.
+  - `logger.info(...)`: Logs the start of the request, including the method (GET, POST, etc.) and the URL path.
+  - `start_time = time.time()`: Records the start time.
+  - `response: Response = await call_next(request)`: This is _crucial_. It calls the next middleware in the chain (or the final route handler if this is the last middleware). The `await` is important because the handler might be asynchronous.
+  - `end_time = time.time()`: Records the end time.
+  - `process_time = ...`: Calculates the processing time in milliseconds.
+  - `logger.info(...)`: Logs the completion of the request, including the status code and the processing time. We use the `extra` argument to add structured data to the log message, which is ideal for JSON logging.
+  - `return response`: return the response.
+
+- **JSON Logging**: confirmed that the JSON logging setup is complete.
+
+**How to Verify the Middleware:**
+
+1.  Restart your FastAPI server (`docker-compose up --build`).
+2.  Make some requests to your API endpoints (e.g., create a project, get project status).
+3.  Observe the logs in your terminal (where Docker Compose is running). You should see JSON log entries for each request, including the start and end times, method, path, status code, and processing time.
+
+Example Log Output (you'll see something like this):
+
+```json
+{"asctime": "2024-02-17 10:30:00,123", "levelname": "INFO", "name": "src.backend.main", "message": "Request started: POST /api/v1/projects/ id=a1b2c3d4-e5f6-7890-1234-567890abcdef"}
+{"asctime": "2024-02-17 10:30:00,456", "levelname": "INFO", "name": "src.backend.main", "message": "Request finished: POST /api/v1/projects/ id=a1b2c3d4-e5f6-7890-1234-567890abcdef", "http.status_code": 201, "http.method": "POST", "http.path": "/api/v1/projects/", "http.duration": "333.23"}
+```
+
+This structured logging is extremely valuable for:
+
+- **Debugging:** Quickly identify slow requests or errors.
+- **Monitoring:** Track API performance and usage patterns.
+- **Auditing:** Keep a record of all requests.
+
+This completes this part. You now have:
+
+- Working Celery task tests (basic).
+- Request logging middleware in your FastAPI application.
+
+The next part will involve integrating error handling and status updates into your Celery task, and starting to connect the frontend.
