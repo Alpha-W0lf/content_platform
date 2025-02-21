@@ -118,7 +118,7 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile.redis
-    image: redis/redis-stack:7.4.0-v3
+    image: redis/redis-stack-server:7.4.0-v3
     ports:
       - "6379:6379"
       - "8001:8001"
@@ -130,7 +130,6 @@ services:
         target: /redis.conf
         bind:
           create_host_path: true
-      - ./config/redis/docker-entrypoint.sh:/docker-entrypoint.sh:ro
     networks:
       - content-platform
     environment:
@@ -138,14 +137,8 @@ services:
       - REDIS_USER=default
       - REDIS_LOGLEVEL=debug
       - REDIS_LOG_DIR=/var/log/redis
-    command: ["/docker-entrypoint.sh"]
     healthcheck:
-      test: |
-        /bin/sh -c '
-        redis-cli -h localhost -p 6379 -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep -q "PONG" &&
-        redis-cli -h localhost -p 6379 -a "$$REDIS_PASSWORD" --no-auth-warning acl whoami | grep -q "default" &&
-        redis-cli -h localhost -p 6379 -a "$$REDIS_PASSWORD" --no-auth-warning info server | grep -q "redis_version"
-        '
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
