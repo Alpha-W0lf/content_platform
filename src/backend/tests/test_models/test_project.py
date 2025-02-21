@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from src.backend.models.asset import Asset
 from src.backend.models.project import Project
@@ -12,7 +13,6 @@ from src.backend.schemas.project import ProjectStatus
 
 @pytest.mark.asyncio
 async def test_create_project(db_session: AsyncSession) -> None:
-    # Using keyword args instead of positional args
     project = Project(
         id=uuid.uuid4(),
         topic="Test Topic",
@@ -73,11 +73,14 @@ async def test_project_asset_relationship(db_session: AsyncSession) -> None:
     db_session.add(project)
     await db_session.commit()
 
-    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    result = await db_session.execute(
+        select(Project).filter_by(id=project.id).options(joinedload(Project.assets))
+    )
     saved_project = result.scalar_one()
     assert len(saved_project.assets) == 2
     assert all(isinstance(asset, Asset) for asset in saved_project.assets)
     assert any(asset.asset_type == "script" for asset in saved_project.assets)
+    assert any(asset.asset_type == "video" for asset in saved_project.assets)
 
 
 @pytest.mark.asyncio
@@ -97,7 +100,11 @@ async def test_project_cascade_delete(db_session: AsyncSession) -> None:
     )
 
     project.assets = [asset]
+    db_session.add(project)
     await db_session.commit()
+
+    # Store the asset ID before deletion
+    asset_id = asset.id
 
     await db_session.delete(project)
     await db_session.commit()
@@ -107,8 +114,8 @@ async def test_project_cascade_delete(db_session: AsyncSession) -> None:
     assert project_result.scalar_one_or_none() is None
 
     # Verify associated asset is deleted
-    asset_result = await db_session.execute(select(Asset).filter_by(id=asset.id))
-    assert asset_result.all() == []
+    asset_result = await db_session.execute(select(Asset).filter_by(id=asset_id))
+    assert asset_result.scalar_one_or_none() is None
 
 
 @pytest.mark.asyncio
@@ -129,3 +136,4 @@ async def test_project_timestamps(db_session: AsyncSession) -> None:
     await db_session.commit()
 
     assert project.updated_at > original_updated_at
+    assert project.created_at == project.created_at  # Should not change

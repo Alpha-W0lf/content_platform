@@ -18,7 +18,7 @@ echo "✅ flake8 complete"
 
 # Run type checking
 echo "\n🔍 Running mypy..."
-mypy src/
+mypy --config-file mypy.ini src/
 echo "✅ mypy complete"
 
 # Optional: Run pyright (if installed globally)

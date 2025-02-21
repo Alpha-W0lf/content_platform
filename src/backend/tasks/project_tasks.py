@@ -3,9 +3,9 @@ import asyncio
 import logging
 import os
 from datetime import datetime
-from typing import Optional
 
 import redis
+from celery import Task
 from sqlalchemy import select
 from typing_extensions import ParamSpec
 
@@ -92,53 +92,58 @@ def redis_interaction_test() -> str:
 def test_task(x: int, y: int) -> int:
     """A test task that adds two numbers."""
     logger.debug(f"test_task called with x={x}, y={y}")
-    result = x + y
+    result: int = x + y
     logger.debug(f"test_task result: {result}")
     return result
 
 
 @celery_app.task(bind=True, name="process_project")
 @debug_task
-async def process_project(self, project_id: str) -> None:
+def process_project(self: Task, project_id: str) -> None:
     """
-    Process a project asynchronously with enhanced error handling and status updates.
+    Process a project with enhanced error handling and status updates.
 
     Args:
         self: The Celery task instance
         project_id: The UUID of the project to process
     """
     logger.info(f"Starting process_project for project_id: {project_id}")
-    project: Optional[Project] = None
 
+    # Run the async parts in an event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        loop.run_until_complete(_process_project_async(project_id))
+    finally:
+        loop.close()
+
+
+async def _process_project_async(project_id: str) -> None:
+    """Async implementation of project processing"""
     # Create a new database session for this task
     async with AsyncSessionLocal() as db:
         try:
             # Get the project
             result = await db.execute(select(Project).where(Project.id == project_id))
             project = result.scalar_one_or_none()
-
             if project is None:
                 logger.error(f"Project not found: {project_id}")
                 return
-
             # Update to PROCESSING
             project.status = ProjectStatus.PROCESSING
             await db.commit()
             await db.refresh(project)
             logger.info(f"Project {project_id} status updated to PROCESSING")
-
             # Simulate work (replace with actual processing)
             await asyncio.sleep(5)
-
             # Update to COMPLETED
             project.status = ProjectStatus.COMPLETED
             await db.commit()
             logger.info(f"Project {project_id} status updated to COMPLETED")
-
         except Exception as e:
             logger.exception(f"Error processing project {project_id}: {str(e)}")
             await db.rollback()
-
             if project:
                 try:
                     project.status = ProjectStatus.ERROR
@@ -148,6 +153,5 @@ async def process_project(self, project_id: str) -> None:
                     logger.exception(
                         f"Failed to update project status to ERROR: {str(commit_error)}"
                     )
-
             # Re-raise the exception for Celery
             raise

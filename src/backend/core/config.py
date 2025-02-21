@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Content Platform"
     API_VERSION: str = "v0.0"
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://user:password@postgres:5432/content_platform"
+        default="postgresql+asyncpg://user:password@localhost:5432/content_platform"
     )
     TEST_DATABASE_URL: str = Field(default="")  # Will be set by validator
     REDIS_URL: Optional[str] = None
@@ -34,7 +34,11 @@ class Settings(BaseSettings):
         if not v:
             # If TEST_DATABASE_URL is not set, derive it from DATABASE_URL
             base_url: str = str(info.data.get("DATABASE_URL", ""))
-            return base_url.replace("content_platform", "test_content_platform")
+            # Replace localhost with postgres for testing since we're running in Docker
+            test_url = base_url.replace("localhost", "postgres").replace(
+                "content_platform", "test_content_platform"
+            )
+            return test_url
         return v
 
     @field_validator("CELERY_BROKER_URL", "CELERY_RESULT_BACKEND", mode="before")

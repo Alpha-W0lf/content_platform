@@ -1,10 +1,9 @@
 """
 Pytest fixtures for backend tests.
 """
-
 import asyncio
-from typing import AsyncGenerator, Generator
-
+from collections.abc import AsyncGenerator, Generator
+import pytest_asyncio
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import (
@@ -19,7 +18,7 @@ from src.backend.core.database import get_db
 from src.backend.main import app
 
 test_engine: AsyncEngine = create_async_engine(
-    settings.TEST_DATABASE_URL,  # Fixed case to match Settings class
+    settings.TEST_DATABASE_URL,
     echo=False,
     future=True,
 )
@@ -39,36 +38,42 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def setup_database() -> AsyncGenerator[None, None]:
     async with test_engine.begin() as conn:
         # Create tables
         from src.backend.models.base import Base
-
         await conn.run_sync(Base.metadata.create_all)
-
+    yield None
     async with test_engine.begin() as conn:
-        yield
         # Drop tables
         await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(name="db_session")
 async def db_session(setup_database: None) -> AsyncGenerator[AsyncSession, None]:
+    """
+    Create a fresh database session for a test.
+    Returns an AsyncSession via AsyncGenerator for proper typing and cleanup.
+    """
     async with async_session() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Test client fixture that uses the test database session."""
-
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-
     app.dependency_overrides.clear()

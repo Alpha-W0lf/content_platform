@@ -1,3 +1,4 @@
+```markdown
 # Content Platform Development Guide - Part 1: Project Setup and Initial API/Model Tests
 
 This is Part 1 of 4 in the Content Platform Development Guide series:
@@ -7,11 +8,7 @@ This is Part 1 of 4 in the Content Platform Development Guide series:
 - Part 3: Task Testing and Request Logging
 - Part 4: Task Error Handling and Frontend Integration
 
-This Part: Project Setup and Initial API/Model Tests
-
-This part focuses on getting the basic project structure, API endpoints (create, get, list), and corresponding model and API tests in place.
-
-This is one part of a multi-part guide to developing and testing the Content Platform. This part focuses on setting up the core project structure, defining the basic `Project` and `Asset` models, creating initial API endpoints for creating, retrieving, and listing projects, and writing tests for these endpoints and models.
+This part focuses on getting the basic project structure, API endpoints (create, get, list), and corresponding model and API tests in place.  It follows a Test-Driven Development (TDD) approach.
 
 **Remember to always:**
 
@@ -62,7 +59,7 @@ This is one part of a multi-part guide to developing and testing the Content Pla
 
 ### In Progress 🚧
 
-- [ ] Initial Model Tests
+- [ ] Initial Model Tests  _**<-- Focus Here Next**_
   - [ ] Project model creation
   - [ ] Project status transitions
   - [ ] Project-Asset relationship
@@ -78,80 +75,78 @@ This is one part of a multi-part guide to developing and testing the Content Pla
 
 ### Next Steps 📋
 
-1. **Complete Basic Error Handling:** Add initial error handling to endpoints
-2. **Move to PATCH Implementation:** Begin work on update functionality
-3. **Document Initial API:** Document the basic endpoints
+1.  **Complete Initial Model Tests:**  Write tests for `Project` and `Asset` models (creation, updates, relationships, constraints).
+2.  **Complete Basic Error Handling:** Add initial error handling to endpoints.
+3.  **Move to PATCH Implementation:** Begin work on update functionality (after completing model tests and basic error handling).
+4.  **Document Initial API:** Document the basic endpoints.
 
 ## 1. Project Structure (Review)
 
 Make sure your project structure matches the following. You should have all these files and directories already. This is just a checklist.
-content_copy
-download
-Use code with caution.
-Markdown
 
+```
 alpha-w0lf-content_platform/
 ├── .docker/
-│ ├── Dockerfile.api
-│ ├── Dockerfile.celery
-│ └── Dockerfile.frontend
+│   ├── Dockerfile.api
+│   ├── Dockerfile.celery
+│   └── Dockerfile.frontend
 ├── src/
-│ ├── backend/
-│ │ ├── init.py
-│ │ ├── alembic.ini
-│ │ ├── celeryconfig.py
-│ │ ├── main.py
-│ │ ├── requirements.txt
-│ │ ├── start.sh
-│ │ ├── api/
-│ │ │ ├── init.py
-│ │ │ ├── dependencies.py
-│ │ │ └── routers/
-│ │ │ ├── init.py
-│ │ │ └── projects.py
-│ │ ├── core/
-│ │ │ ├── init.py
-│ │ │ ├── config.py
-│ │ │ ├── database.py
-│ │ │ └── utils.py
-│ │ ├── migrations/
-│ │ │ ├── init.py
-│ │ │ ├── env.py
-│ │ │ ├── script.py.mako
-│ │ │ └── versions/
-│ │ │ └── ... (your migration files)
-│ │ ├── models/
-│ │ │ ├── init.py
-│ │ │ ├── asset.py
-│ │ │ ├── base.py
-│ │ │ └── project.py
-│ │ ├── modules/
-│ │ │ └── init.py
-│ │ ├── prompts/
-│ │ │ └── init.py
-│ │ ├── schemas/
-│ │ │ ├── init.py
-│ │ │ ├── asset.py
-│ │ │ └── project.py
-│ │ ├── tasks/
-│ │ │ ├── init.py
-│ │ │ └── project_tasks.py
-│ │ └── tests/
-│ │ ├── init.py
-│ │ ├── conftest.py
-│ │ ├── test_api/
-│ │ │ ├── init.py
-│ │ │ └── test_projects.py
-│ │ ├── test_models/
-│ │ │ ├── init.py
-│ │ │ ├── test_project.py
-│ │ │ └── test_asset.py <-- NEW
-│ │ └── test_modules/
-│ │ └── init.py
-│ └── frontend/
-│ └── ... (your Next.js project) ...
+│   ├── backend/
+│   │   ├── __init__.py
+│   │   ├── alembic.ini
+│   │   ├── celeryconfig.py
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   │   ├── start.sh
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── dependencies.py
+│   │   │   └── routers/
+│   │   │       ├── __init__.py
+│   │   │       └── projects.py
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py
+│   │   │   ├── database.py
+│   │   │   └── utils.py
+│   │   ├── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── env.py
+│   │   │   ├── script.py.mako
+│   │   │   └── versions/
+│   │   │       └── ... (your migration files)
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── asset.py
+│   │   │   ├── base.py
+│   │   │   └── project.py
+│   │   ├── modules/
+│   │   │   └── __init__.py
+│   │   ├── prompts/
+│   │   │   └── __init__.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── asset.py
+│   │   │   └── project.py
+│   │   ├── tasks/
+│   │   │   ├── __init__.py
+│   │   │   └── project_tasks.py
+│   │   └── tests/
+│   │   │   ├── __init__.py
+│   │   │   ├── conftest.py
+│   │   │   ├── test_api/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── test_projects.py
+│   │   │   ├── test_models/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── test_project.py
+│   │   │   │   └── test_asset.py
+│   │   │   └── test_modules/
+│   │   │       └── __init__.py
+│   └── frontend/
+│       └── ... (your Next.js project) ...
 ├── .devcontainer/
-│ └── devcontainer.json
+│   └── devcontainer.json
 ├── .dockerignore
 ├── .env.example
 ├── .flake8
@@ -162,30 +157,31 @@ alpha-w0lf-content_platform/
 ├── pyrightconfig.json
 ├── README.md
 └── ... other files ...
+```
 
 ## 2. Backend Code (Review and Ensure Consistency)
 
 Review the following files and ensure they are consistent with the code provided in previous responses. Pay close attention to:
 
-- **Type Hints:** Make sure all functions and methods have type hints.
-- **Docstrings:** Make sure all functions and classes have docstrings explaining their purpose.
-- **Error Handling:** Basic `try...except` blocks in API endpoints.
-- **Imports**: Ensure all imports are present and organized.
+-   **Type Hints:** Make sure all functions and methods have type hints.
+-   **Docstrings:** Make sure all functions and classes have docstrings explaining their purpose.
+-   **Error Handling:** Basic `try...except` blocks in API endpoints.
+-   **Imports**: Ensure all imports are present and organized.
 
-- `src/backend/main.py`
-- `src/backend/api/routers/projects.py`
-- `src/backend/api/dependencies.py`
-- `src/backend/core/config.py`
-- `src/backend/core/database.py`
-- `src/backend/core/utils.py`
-- `src/backend/models/project.py`
-- `src/backend/models/asset.py`
-- `src/backend/models/__init__.py`
-- `src/backend/schemas/project.py`
-- `src/backend/schemas/asset.py`
-- `src/backend/schemas/__init__.py`
-- `src/backend/celeryconfig.py`
-- `src/backend/migrations/env.py` (Make sure this is configured for asyncpg and your models)
+-   `src/backend/main.py`
+-   `src/backend/api/routers/projects.py`
+-   `src/backend/api/dependencies.py`
+-   `src/backend/core/config.py`
+-   `src/backend/core/database.py`
+-   `src/backend/core/utils.py`
+-   `src/backend/models/project.py`
+-   `src/backend/models/asset.py`
+-   `src/backend/models/__init__.py`
+-   `src/backend/schemas/project.py`
+-   `src/backend/schemas/asset.py`
+-   `src/backend/schemas/__init__.py`
+-   `src/backend/celeryconfig.py`
+-   `src/backend/migrations/env.py` (Make sure this is configured for asyncpg and your models)
 
 ## 3. Test Fixtures (`conftest.py`) - Review
 
@@ -236,52 +232,361 @@ async def client(db_session):
     async with AsyncClient(app=app, base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear() # Clean up overrides
-content_copy
-download
-Use code with caution.
+```
 
 Key Points:
 
-TEST_DATABASE_URL: Make sure this is correctly configured in your .env and config.py.
+-   `TEST_DATABASE_URL`: Make sure this is correctly configured in your `.env` and `config.py`.
 
-scope="function": Using function scope for setup_database and db_session ensures that each test function gets a fresh database and session, and that any changes are rolled back after the test. This is crucial for test isolation.
+-   `scope="function"`: Using `function` scope for `setup_database` and `db_session` ensures that each test function gets a fresh database and session, and that any changes are rolled back after the test. This is crucial for test isolation.
 
-rollback(): The await session.rollback() in db_session is essential. It ensures that any changes made during a test are undone, preventing data from one test from affecting another.
+-   `rollback()`: The `await session.rollback()` in `db_session` is essential.  It ensures that any changes made during a test are undone, preventing data from one test from affecting another.
 
-app.dependency_overrides: Dependency overrides are cleared after the test.
+-   `app.dependency_overrides`: Dependency overrides are cleared after the test.
 
-4. Initial API Tests (test_projects.py) - Review
+## 4. Initial API Tests (`test_projects.py`) - Review
 
-Review your src/backend/tests/test_api/test_projects.py file. It should include tests for the POST /projects/, GET /projects/{id}, GET /projects/{id}/status and GET /projects/ endpoints. It should be consistent with the complete file provided in previous responses, including all the tests for success, missing data, invalid data, and not found cases.
+Review your `src/backend/tests/test_api/test_projects.py` file. It should include tests for the `POST /api/v1/projects/`, `GET /api/v1/projects/{id}`, `GET /api/v1/projects/{id}/status` and `GET /api/v1/projects/` endpoints. It should be consistent with the complete file provided in previous responses, including all the tests for success, missing data, invalid data, and not found cases.
 
-5. Initial Model Tests - Review
+## 5. Initial Model Tests - **IMPLEMENTATION (TDD)**
 
-Review your src/backend/tests/test_models/test_project.py and src/backend/tests/test_models/test_asset.py files. Make sure you have tests for:
+Now, we'll implement the model tests *before* adding any further functionality to the models themselves.  This is the core of TDD.
 
-Creating instances of your models.
+### 5.1.  `test_project.py`
 
-Updating fields.
+Create (or update) `src/backend/tests/test_models/test_project.py` with the following tests.  These tests cover the current functionality of the `Project` model:
 
-Verifying relationships (Project-Asset).
+```python
+# src/backend/tests/test_models/test_project.py
+import uuid
+from datetime import datetime, timezone
 
-Testing any constraints (e.g., the asset_type enum).
+import pytest
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload  # Import joinedload
 
-Testing timestamp updates (created_at, updated_at).
+from src.backend.models.asset import Asset  # Import Asset
+from src.backend.models.project import Project
+from src.backend.schemas.project import ProjectStatus
 
-Testing cascade deletes.
 
-These should also be consistent with the provided code.
+@pytest.mark.asyncio
+async def test_create_project(db_session: AsyncSession) -> None:
+    # Using keyword args instead of positional args
+    project = Project(
+        id=uuid.uuid4(),
+        topic="Test Topic",
+        name="Test Project",
+        notes="Test Notes",
+        status=ProjectStatus.CREATED,
+    )
+    db_session.add(project)
+    await db_session.commit()
 
-6. Run Tests
+    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    saved_project = result.scalar_one()
 
-From the root of your project, run:
+    assert saved_project.topic == "Test Topic"
+    assert saved_project.name == "Test Project"
+    assert saved_project.notes == "Test Notes"
+    assert saved_project.status == ProjectStatus.CREATED
 
+
+@pytest.mark.asyncio
+async def test_project_status_transition(db_session: AsyncSession) -> None:
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    project.status = ProjectStatus.PROCESSING
+    await db_session.commit()
+
+    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    updated_project = result.scalar_one()
+    assert updated_project.status == ProjectStatus.PROCESSING
+
+@pytest.mark.asyncio
+async def test_project_asset_relationship(db_session: AsyncSession) -> None:
+    project = Project(
+        id=uuid.uuid4(),
+        topic="Test Topic",
+        name="Test Project",
+        status=ProjectStatus.CREATED,
+    )
+
+    asset1 = Asset(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        asset_type="script",
+        path="/path/to/script",
+    )
+
+    asset2 = Asset(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        asset_type="video",
+        path="/path/to/video",
+    )
+
+    project.assets = [asset1, asset2]
+    db_session.add(project)  # Add the project, which will cascade to assets
+    await db_session.commit()
+
+    # Use joinedload to eager load the assets
+    result = await db_session.execute(
+        select(Project).filter_by(id=project.id).options(joinedload(Project.assets))
+    )
+    saved_project = result.scalar_one()
+
+    assert len(saved_project.assets) == 2
+    assert all(isinstance(asset, Asset) for asset in saved_project.assets)
+    assert any(asset.asset_type == "script" for asset in saved_project.assets)
+    assert any(asset.asset_type == "video" for asset in saved_project.assets)
+
+@pytest.mark.asyncio
+async def test_project_cascade_delete(db_session: AsyncSession) -> None:
+    project = Project(
+        id=uuid.uuid4(),
+        topic="Test Topic",
+        name="Test Project",
+        status=ProjectStatus.CREATED,
+    )
+
+    asset = Asset(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        asset_type="script",
+        path="/path/to/script",
+    )
+
+    project.assets = [asset]
+    db_session.add(project) # Add the project
+    await db_session.commit()
+
+    await db_session.delete(project)
+    await db_session.commit()
+
+    # Verify project is deleted
+    project_result = await db_session.execute(select(Project).filter_by(id=project.id))
+    assert project_result.scalar_one_or_none() is None
+
+    # Verify associated asset is deleted
+    asset_result = await db_session.execute(select(Asset).filter_by(id=asset.id))
+    assert asset_result.all() == []
+
+@pytest.mark.asyncio
+async def test_project_timestamps(db_session: AsyncSession) -> None:
+    start_time = datetime.now(timezone.utc)
+
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    assert project.created_at >= start_time
+    assert project.updated_at >= start_time
+
+    # Test update
+    original_updated_at = project.updated_at
+    await db_session.refresh(project) # Important to get the exact time
+    project.name = "Updated Name"
+    await db_session.commit()
+
+    result = await db_session.execute(select(Project).filter_by(id=project.id))
+    saved_project = result.scalar_one()
+
+    assert saved_project.updated_at > original_updated_at
+    assert saved_project.created_at == project.created_at
+```
+
+Key points about `test_project.py`:
+
+*   **Test Cases:**  Covers creation, status updates, relationships (with `Asset`), cascade deletion, and timestamp updates.
+*   **Asynchronous Tests:**  All tests are `async` functions and use `await` for database operations.
+*   **Database Session Fixture:**  Uses the `db_session` fixture (from `conftest.py`) to interact with the test database.  Each test gets its own isolated session.
+* **JoinedLoad**: Uses joinedload to eager load assets to ensure the relationship between assets and projects is set correctly.
+
+### 5.2.  `test_asset.py`
+
+Create `src/backend/tests/test_models/test_asset.py` with the following tests:
+
+```python
+# src/backend/tests/test_models/test_asset.py
+import uuid
+from datetime import datetime, timezone
+
+import pytest
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.backend.models.asset import Asset
+from src.backend.models.project import Project  # Import Project
+from src.backend.schemas.project import ProjectStatus
+
+
+@pytest.mark.asyncio
+async def test_create_asset(db_session: AsyncSession) -> None:
+    """Test creating an asset with valid data."""
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    asset = Asset(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        asset_type="script",
+        path="/path/to/asset",
+    )
+    db_session.add(asset)
+    await db_session.commit()
+
+    result = await db_session.execute(select(Asset).filter_by(id=asset.id))
+    saved_asset = result.scalar_one()
+
+    assert saved_asset.project_id == project.id
+    assert saved_asset.asset_type == "script"
+    assert saved_asset.path == "/path/to/asset"
+
+
+@pytest.mark.asyncio
+async def test_asset_updates(db_session: AsyncSession) -> None:
+    """Test updating asset fields."""
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    asset = Asset(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        asset_type="script",
+        path="/original/path",
+    )
+    db_session.add(asset)
+    await db_session.commit()
+
+    # Update the asset
+    asset.path = "/updated/path"
+    asset.asset_type = "video"
+    await db_session.commit()
+
+    result = await db_session.execute(select(Asset).filter_by(id=asset.id))
+    updated_asset = result.scalar_one()
+    assert updated_asset.path == "/updated/path"
+    assert updated_asset.asset_type == "video"
+
+
+@pytest.mark.asyncio
+async def test_asset_timestamp_updates(db_session: AsyncSession) -> None:
+    """Test that timestamps are properly set and updated."""
+    start_time = datetime.now(timezone.utc)
+
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    asset = Asset(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        asset_type="script",
+        path="/path/to/asset",
+    )
+    db_session.add(asset)
+    await db_session.commit()
+
+    assert asset.created_at >= start_time
+    assert asset.updated_at >= start_time
+
+    # Test update timestamp
+    original_updated_at = asset.updated_at
+    await db_session.refresh(asset)
+    asset.path = "/new/path"
+    await db_session.commit()
+
+    assert asset.updated_at > original_updated_at
+    assert asset.created_at == asset.created_at  # Should not change
+
+@pytest.mark.asyncio
+async def test_asset_enum_validation(db_session: AsyncSession) -> None:
+    """Test that asset_type must be a valid enum value."""
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    # Test valid asset types
+    valid_types = ["script", "narration", "video", "image", "slide"]
+    for asset_type in valid_types:
+        asset = Asset(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            asset_type=asset_type,
+            path=f"/path/to/{asset_type}",
+        )
+        db_session.add(asset)
+        await db_session.commit() # Commit each successful creation
+        result = await db_session.execute(select(Asset).filter_by(id=asset.id))
+        saved_asset = result.scalar_one()
+        assert saved_asset.asset_type == asset_type
+        db_session.delete(asset) #cleanup
+        await db_session.commit() # Commit after each successful creation
+
+
+    # Test invalid asset type
+    with pytest.raises(IntegrityError):
+        invalid_asset = Asset(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            asset_type="invalid_type",
+            path="/path/to/asset",
+        )
+        db_session.add(invalid_asset)
+        await db_session.commit()
+
+
+@pytest.mark.asyncio
+async def test_asset_path_not_nullable(db_session: AsyncSession) -> None:
+    """Test that path cannot be null."""
+    project = Project(id=uuid.uuid4(), topic="Test Topic", status=ProjectStatus.CREATED)
+    db_session.add(project)
+    await db_session.commit()
+
+    with pytest.raises(IntegrityError):
+        asset = Asset(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            asset_type="script",
+            path=None,  # This should raise an error
+        )
+        db_session.add(asset)
+        await db_session.commit()
+```
+
+Key points about `test_asset.py`:
+
+*   **Test Cases:**  Covers creation, updates, timestamp behavior, enum validation, and the `path` not-nullable constraint.
+*   **`IntegrityError`:**  Uses `pytest.raises(IntegrityError)` to assert that database constraints are enforced.
+* **Enum Testing**: Includes tests for valid and invalid enum values.
+
+## 7. Run Tests (Again)
+
+After adding the model tests, run all tests again to ensure everything is still working:
+
+```bash
 docker-compose run api pytest -v src/backend/tests
-content_copy
-download
-Use code with caution.
-Bash
+```
 
-This will run all your backend tests (both API and model tests). Make sure they all pass before moving on. If any tests fail, carefully examine the error messages and debug your code.
+All tests (API and model) should pass. If any tests fail, carefully review the error messages and debug your code. It's crucial to fix any failing tests *before* moving on.
 
-This completes this part. Once all tests are passing and you've reviewed the code and structure, you can move on to the next part, which will focus on the PATCH endpoint and more advanced error handling. Let me know when you are ready to continue.
+This completes Part 1 of the guide, with a strong emphasis on Test-Driven Development.  You now have:
+
+*   A well-defined project structure.
+*   Basic FastAPI setup.
+*   Database models and migrations.
+*   Initial API endpoints.
+*   A comprehensive suite of API and model tests.
+*   A solid foundation for building more complex features.
+
+The next step is to enhance error handling in API and begin working on the `PATCH` endpoint for updating projects.
+```
+
+This single, comprehensive Markdown file is your guide.  It's structured for clarity, actionability, and a true TDD workflow.  Remember to run the tests frequently as you work. Good luck!

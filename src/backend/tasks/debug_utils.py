@@ -1,8 +1,7 @@
 import logging
 import os
 from functools import wraps
-from typing import cast
-from typing import Any, Callable, Dict, Optional, ParamSpec, TypeVar
+from typing import Any, Callable, Dict, Optional, ParamSpec, TypeVar, cast
 
 import redis
 from celery import Task
