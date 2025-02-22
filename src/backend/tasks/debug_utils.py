@@ -1,7 +1,7 @@
 import logging
 import os
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, ParamSpec, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, ParamSpec, TypeVar
 
 import redis
 from celery import Task
@@ -50,9 +50,13 @@ def debug_task(func: Callable[P, R]) -> Callable[P, R]:
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        celery_task: Task[Any, Any] = cast(  # Type hint and cast for celery_task
-            Task[Any, Any], args[0]
-        )
+        if not args:
+            return func(*args, **kwargs)
+
+        celery_task = args[0]
+        if not isinstance(celery_task, Task):
+            return func(*args, **kwargs)
+
         task_info = (
             f"Task {celery_task.name}[{celery_task.request.id}] - "
             f"Started execution with args: {args[1:]}, kwargs: {kwargs}"

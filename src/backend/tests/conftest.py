@@ -3,11 +3,13 @@ Pytest fixtures for backend tests.
 """
 
 import asyncio
-import pytest_asyncio
 from typing import AsyncGenerator, Generator
 
+import logging
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -60,7 +62,7 @@ async def db_session(setup_database):
         await session.rollback()  # Rollback after each test
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="function")
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Test client fixture that uses the test database session."""
 
@@ -73,3 +75,25 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
         yield ac
 
     app.dependency_overrides.clear()
+
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(autouse=True)
+async def cleanup_database(db_session: AsyncSession):
+    """Clean up the test database before each test."""
+    try:
+        logger.info("Cleaning up database: truncating tables")
+        # Clean up before test by truncating all tables
+        await db_session.execute(text("TRUNCATE TABLE projects CASCADE"))
+        await db_session.execute(text("TRUNCATE TABLE assets CASCADE"))
+        await db_session.commit()
+        # Start with a fresh transaction
+        await db_session.begin()
+        logger.info("Database cleanup complete")
+        yield
+    finally:
+        logger.info("Rolling back transaction after cleanup")
+        # Rollback transaction in case of errors
+        await db_session.rollback()

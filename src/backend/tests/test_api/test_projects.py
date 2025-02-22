@@ -4,10 +4,21 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 from httpx import AsyncClient
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.models.project import Project
 from src.backend.schemas.project import ProjectCreate, ProjectStatus
+
+
+@pytest.fixture(autouse=True)
+async def cleanup_database(db_session: AsyncSession):
+    """Clean up the test database before each test."""
+    await db_session.execute(delete(Project))
+    await db_session.commit()
+    yield
+    await db_session.execute(delete(Project))
+    await db_session.commit()
 
 
 @pytest.mark.asyncio
@@ -46,7 +57,7 @@ async def test_create_project_missing_topic(client: AsyncClient) -> None:
 async def test_create_project_invalid_topic(client: AsyncClient) -> None:
     """Test project creation with invalid topic type (e.g., number instead of string)"""
     data: Dict[str, Any] = {"topic": 123, "notes": "Test Notes"}  # Invalid topic type
-    response = await client.post("/projects/", json=data)
+    response = await client.post("/api/v1/projects/", json=data)
     assert response.status_code == 422  # Expecting a validation error
 
 
@@ -62,7 +73,7 @@ async def test_get_project_status(client: AsyncClient, db_session: AsyncSession)
     await db_session.refresh(project)
 
     # Get its status
-    status_response = await client.get(f"/projects/{project.id}/status")
+    status_response = await client.get(f"/api/v1/projects/{project.id}/status")
     assert status_response.status_code == 200
     status = status_response.json()
     assert status["status"] == "CREATED"
@@ -72,7 +83,7 @@ async def test_get_project_status(client: AsyncClient, db_session: AsyncSession)
 async def test_get_project_status_not_found(client: AsyncClient):
     """Test getting status of non-existent project"""
     non_existent_id = str(uuid4())
-    response = await client.get(f"/projects/{non_existent_id}/status")
+    response = await client.get(f"/api/v1/projects/{non_existent_id}/status")
     assert response.status_code == 404
     assert response.json() == {"detail": "Project not found"}
 
@@ -81,26 +92,32 @@ async def test_get_project_status_not_found(client: AsyncClient):
 async def test_get_project(client: AsyncClient, db_session: AsyncSession):
     """Test getting a project by ID"""
     # Create a project first
-    project = Project(topic="Test Topic", notes="Test Notes", status="CREATED")
+    project_id = uuid4()
+    project = Project(
+        id=project_id,
+        topic="Test Topic",
+        notes="Test Notes",
+        status=ProjectStatus.CREATED,
+    )
     db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
 
     # Get the project
-    get_response = await client.get(f"/projects/{project.id}")
+    get_response = await client.get(f"/api/v1/projects/{project.id}")
     assert get_response.status_code == 200
     project_data = get_response.json()
     assert project_data["id"] == str(project.id)
     assert project_data["topic"] == "Test Topic"
     assert project_data["notes"] == "Test Notes"
-    assert project_data["status"] == "CREATED"
+    assert project_data["status"] == ProjectStatus.CREATED.value
 
 
 @pytest.mark.asyncio
 async def test_get_project_not_found(client: AsyncClient):
     """Test getting a non-existent project by ID"""
     non_existent_id = str(uuid4())
-    response = await client.get(f"/projects/{non_existent_id}")
+    response = await client.get(f"/api/v1/projects/{non_existent_id}")
     assert response.status_code == 404
     assert response.json() == {"detail": "Project not found"}
 
@@ -109,7 +126,7 @@ async def test_get_project_not_found(client: AsyncClient):
 async def test_get_project_invalid_id(client: AsyncClient):
     """Test getting a project with an invalid ID format"""
     invalid_id = "not-a-uuid"
-    response = await client.get(f"/projects/{invalid_id}")
+    response = await client.get(f"/api/v1/projects/{invalid_id}")
     assert response.status_code == 422  # Expecting a validation error
 
 
@@ -127,7 +144,7 @@ async def test_list_projects(client: AsyncClient, db_session: AsyncSession) -> N
     await db_session.commit()
 
     # Get the list of projects
-    response = await client.get("/projects/")
+    response = await client.get("/api/v1/projects/")
     assert response.status_code == 200
     projects_list: List[Dict[str, Any]] = response.json()
     assert isinstance(projects_list, list)
@@ -143,8 +160,12 @@ async def test_list_projects(client: AsyncClient, db_session: AsyncSession) -> N
 async def test_update_project(client: AsyncClient, db_session: AsyncSession):
     """Test updating a project's fields"""
     # Create initial project
+    project_id = uuid4()
     project = Project(
-        topic="Original Topic", notes="Original Notes", status=ProjectStatus.CREATED
+        id=project_id,
+        topic="Original Topic",
+        notes="Original Notes",
+        status=ProjectStatus.CREATED,
     )
     db_session.add(project)
     await db_session.commit()
@@ -152,38 +173,40 @@ async def test_update_project(client: AsyncClient, db_session: AsyncSession):
 
     # Update the project
     update_data = {"topic": "Updated Topic", "notes": "Updated Notes"}
-    response = await client.patch(f"/projects/{project.id}", json=update_data)
-
+    response = await client.patch(f"/api/v1/projects/{project.id}", json=update_data)
     assert response.status_code == 200
     updated = response.json()
     assert updated["topic"] == "Updated Topic"
     assert updated["notes"] == "Updated Notes"
-    assert updated["status"] == ProjectStatus.CREATED  # Status should remain unchanged
+    assert (
+        updated["status"] == ProjectStatus.CREATED.value
+    )  # Status should remain unchanged
 
 
 @pytest.mark.asyncio
 async def test_update_project_status(client: AsyncClient, db_session: AsyncSession):
     """Test updating a project's status"""
-    project = Project(topic="Status Update Test", status=ProjectStatus.CREATED)
+    project_id = uuid4()
+    project = Project(
+        id=project_id, topic="Status Update Test", status=ProjectStatus.CREATED
+    )
     db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
 
     # Update to PROCESSING
-    update_data = {"status": ProjectStatus.PROCESSING}
-    response = await client.patch(f"/projects/{project.id}", json=update_data)
-
+    update_data = {"status": ProjectStatus.PROCESSING.value}
+    response = await client.patch(f"/api/v1/projects/{project.id}", json=update_data)
     assert response.status_code == 200
     updated = response.json()
-    assert updated["status"] == ProjectStatus.PROCESSING
+    assert updated["status"] == ProjectStatus.PROCESSING.value
 
     # Update to COMPLETED
-    update_data = {"status": ProjectStatus.COMPLETED}
-    response = await client.patch(f"/projects/{project.id}", json=update_data)
-
+    update_data = {"status": ProjectStatus.COMPLETED.value}
+    response = await client.patch(f"/api/v1/projects/{project.id}", json=update_data)
     assert response.status_code == 200
     updated = response.json()
-    assert updated["status"] == ProjectStatus.COMPLETED
+    assert updated["status"] == ProjectStatus.COMPLETED.value
 
 
 @pytest.mark.asyncio
@@ -191,7 +214,8 @@ async def test_update_project_not_found(client: AsyncClient):
     """Test updating a non-existent project"""
     non_existent_id = str(uuid4())
     update_data = {"topic": "New Topic"}
-    response = await client.patch(f"/projects/{non_existent_id}", json=update_data)
+    url = f"/api/v1/projects/{non_existent_id}"
+    response = await client.patch(url, json=update_data)
     assert response.status_code == 404
     assert response.json() == {"detail": "Project not found"}
 
@@ -201,13 +225,15 @@ async def test_update_project_invalid_status(
     client: AsyncClient, db_session: AsyncSession
 ):
     """Test updating a project with an invalid status"""
-    project = Project(topic="Invalid Status Test", status=ProjectStatus.CREATED)
+    project_id = uuid4()
+    project = Project(
+        id=project_id, topic="Invalid Status Test", status=ProjectStatus.CREATED
+    )
     db_session.add(project)
     await db_session.commit()
     await db_session.refresh(project)
 
     # Try to update with invalid status
     update_data = {"status": "INVALID_STATUS"}
-    response = await client.patch(f"/projects/{project.id}", json=update_data)
-
+    response = await client.patch(f"/api/v1/projects/{project.id}", json=update_data)
     assert response.status_code == 422  # Validation error

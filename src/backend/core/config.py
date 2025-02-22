@@ -22,11 +22,15 @@ class Settings(BaseSettings):
             # If TEST_DATABASE_URL is not set, derive it from DATABASE_URL
             base_url: str = str(info.data.get("DATABASE_URL", ""))
             # Replace localhost with postgres for testing since we're running in Docker
-            test_url = base_url.replace("localhost", "postgres").replace(
-                "content_platform", "test_content_platform"
-            ) + "?timezone=utc"  # Add timezone here
+            test_url = (
+                base_url.replace("localhost", "postgres").replace(
+                    "content_platform", "test_content_platform"
+                )
+                + "?timezone=utc"
+            )  # Add timezone here
             return test_url
         return v
+
     CELERY_BROKER_URL: str = Field(default="redis://redis:6379/0")
     CELERY_RESULT_BACKEND: str = Field(default="redis://redis:6379/0")
     CLERK_SECRET_KEY: Optional[str] = None
