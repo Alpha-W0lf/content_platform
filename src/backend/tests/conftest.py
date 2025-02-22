@@ -9,6 +9,8 @@ from typing import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
+from alembic import command
+from alembic.config import Config
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -23,14 +25,16 @@ from src.backend.core.database import get_db
 from src.backend.main import app
 from src.backend.models.asset import Asset  # noqa: F401
 from src.backend.models.base import Base
-
-# Import all models to ensure they're registered with Base.metadata
 from src.backend.models.project import Project  # noqa: F401
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create test engine using the configured test database URL
 test_engine: AsyncEngine = create_async_engine(
     settings.TEST_DATABASE_URL,
-    echo=False,
+    echo=True,  # Enable SQL logging
     future=True,
 )
 
@@ -39,8 +43,6 @@ async_session = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
-
-logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -68,20 +70,56 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 @pytest.fixture(scope="session")
 async def setup_database() -> AsyncGenerator[None, None]:
     """Set up test database tables."""
+    logger.info("Starting database setup...")
     try:
-        async with test_engine.begin() as conn:
+        # Ensure we have a connection to the database
+        async with test_engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+            logger.info("Database connection successful")
+
             # Drop all tables to ensure clean state
+            logger.info("Dropping all existing tables...")
             await conn.run_sync(Base.metadata.drop_all)
-            # Create all tables
-            await conn.run_sync(Base.metadata.create_all)
-            # Verify tables were created
+
+            # Run migrations
+            logger.info("Running migrations...")
+            await conn.commit()  # Commit the transaction before running migrations
+
+        # Run migrations synchronously
+        logger.info("Configuring Alembic...")
+        alembic_cfg = Config("alembic.ini")
+        alembic_cfg.set_main_option("script_location", "src/backend/migrations")
+        alembic_cfg.set_main_option("sqlalchemy.url", str(settings.TEST_DATABASE_URL))
+        alembic_cfg.attributes["db"] = "test"  # Set the db attribute for test database
+        logger.info("Running Alembic upgrade to head...")
+        try:
+            command.upgrade(alembic_cfg, "head")
+            logger.info("Alembic upgrade completed successfully")
+        except Exception as e:
+            logger.error(f"Error during Alembic upgrade: {e}")
+            raise
+
+        # Verify tables were created
+        async with test_engine.connect() as conn:
             result = await conn.execute(
                 text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
             )
             tables = [row[0] for row in result]
             logger.info(f"Created tables: {tables}")
-            if "projects" not in tables or "assets" not in tables:
-                raise Exception("Required tables were not created")
+
+            # Verify table structure
+            for table in ["projects", "assets"]:
+                if table not in tables:
+                    raise Exception(f"Required table '{table}' was not created")
+                columns = await conn.execute(
+                    text(
+                        "SELECT column_name, data_type FROM information_schema.columns "
+                        f"WHERE table_name = '{table}'"
+                    )
+                )
+                logger.info(f"Columns in {table}: {[row for row in columns]}")
+
+        logger.info("Database setup completed successfully")
         yield
     except Exception as e:
         logger.error(f"Error during database setup: {e}")
@@ -90,6 +128,7 @@ async def setup_database() -> AsyncGenerator[None, None]:
         # Clean up after tests
         async with test_engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+            logger.info("Database cleanup completed")
 
 
 @pytest_asyncio.fixture(scope="function")

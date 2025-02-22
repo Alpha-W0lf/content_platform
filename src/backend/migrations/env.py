@@ -17,6 +17,9 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
+    """Get the database URL based on the context."""
+    if hasattr(config, "attributes") and config.attributes.get("db") == "test":
+        return settings.TEST_DATABASE_URL
     return settings.DATABASE_URL
 
 
