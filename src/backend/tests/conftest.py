@@ -3,9 +3,9 @@ Pytest fixtures for backend tests.
 """
 
 import asyncio
+import logging
 from typing import AsyncGenerator, Generator
 
-import logging
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
