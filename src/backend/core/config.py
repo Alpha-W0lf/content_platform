@@ -15,21 +15,7 @@ class Settings(BaseSettings):
     )
     TEST_DATABASE_URL: str = Field(default="")
     REDIS_URL: Optional[str] = None
-
-    @field_validator("TEST_DATABASE_URL", mode="before")
-    def set_test_database_url(cls, v: Optional[str], info: ValidationInfo) -> str:
-        if not v:
-            # If TEST_DATABASE_URL is not set, derive it from DATABASE_URL
-            base_url: str = str(info.data.get("DATABASE_URL", ""))
-            # Replace localhost with postgres for testing since we're running in Docker
-            test_url = (
-                base_url.replace("localhost", "postgres").replace(
-                    "content_platform", "test_content_platform"
-                )
-                + "?timezone=utc"
-            )  # Add timezone here
-            return test_url
-        return v
+    REDIS_PASSWORD: Optional[str] = None
 
     CELERY_BROKER_URL: str = Field(default="redis://redis:6379/0")
     CELERY_RESULT_BACKEND: str = Field(default="redis://redis:6379/0")
@@ -57,7 +43,7 @@ class Settings(BaseSettings):
         return v or ""
 
     class Config:
-        env_file = ".env.backend"  # Updated to use the correct env file
+        env_file = ".env"
 
 
 settings = Settings()
