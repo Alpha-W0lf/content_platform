@@ -33,17 +33,12 @@ RUN echo "\n=== System Limits ===" | tee /var/log/redis/02_system_limits.log && 
 
 # Copy configuration files
 COPY config/redis/redis.conf /redis.conf
-COPY config/redis/docker-entrypoint.sh /docker-entrypoint.sh
-
 # Debug: Print configuration files
 RUN echo "\n=== Redis Configuration ===" | tee /var/log/redis/03_config.log && \
     echo "Redis config file contents:" | tee -a /var/log/redis/03_config.log && \
-    cat /redis.conf | tee -a /var/log/redis/03_config.log && \
-    echo "\nEntrypoint script contents:" | tee -a /var/log/redis/03_config.log && \
-    cat /docker-entrypoint.sh | tee -a /var/log/redis/03_config.log
+    cat /redis.conf | tee -a /var/log/redis/03_config.log 
 
-# Make the entrypoint script executable
-RUN chmod +x /docker-entrypoint.sh
+# Removed docker-entrypoint.sh lines
 
 # Debug: Print file permissions
 RUN echo "\n=== File Permissions ===" | tee /var/log/redis/04_permissions.log && \
@@ -77,5 +72,5 @@ RUN echo '#!/bin/bash\n\
     exec "$@" 2>&1 | tee -a /var/log/redis/redis-debug.log' > /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["redis-stack-server", "/redis.conf"]
+ENTRYPOINT ["redis-stack-server", "/redis.conf"]
+# CMD removed as it's now part of ENTRYPOINT
