@@ -82,7 +82,11 @@ services:
     networks:
       - content-platform
     healthcheck:
-      test: ["CMD-SHELL", "celery -A src.backend.tasks inspect ping -d celery@$$HOSTNAME || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A src.backend.tasks inspect ping -d celery@$$HOSTNAME || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -151,6 +155,7 @@ services:
     volumes:
       - redis_data:/data
       - ./logs/redis:/var/log/redis:rw
+      - ./logs/redis/container_logs:/container_logs
       - type: bind
         source: ./config/redis/redis.conf
         target: /redis.conf
