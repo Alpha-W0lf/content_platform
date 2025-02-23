@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     model_config = {
         "extra": "allow",  # This will allow extra fields in the environment variables
-        "env_file": ".env",
+        "env_file": "../.env",
     }
 
 

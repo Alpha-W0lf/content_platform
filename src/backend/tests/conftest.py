@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 # --- Database Setup ---
 TEST_DATABASE_URL = settings.TEST_DATABASE_URL  # Use settings
 
+logger.info(
+    f"TEST_DATABASE_URL from settings: {TEST_DATABASE_URL}"
+)  # Log TEST_DATABASE_URL
+
 # Create async engine using the configured test database URL
 test_engine: AsyncEngine = create_async_engine(
     TEST_DATABASE_URL,

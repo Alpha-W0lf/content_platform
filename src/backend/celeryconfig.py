@@ -1,9 +1,15 @@
 import logging
 import os
+
 from typing import Any
 
 import redis
 from celery.signals import celeryd_after_setup
+
+# Log all environment variables at the beginning of celeryconfig.py
+print("Environment variables at celeryconfig.py startup:")
+for name, value in os.environ.items():
+    print(f"{name}={value}")
 
 
 def validate_env(var_name: str, var_type: type) -> Any:
@@ -17,9 +23,9 @@ def validate_env(var_name: str, var_type: type) -> Any:
 # Redis connection settings with enhanced validation - TEST
 REDIS_PASSWORD = validate_env("REDIS_PASSWORD", str)
 
-# Construct broker and backend URLs with explicit username
-broker_url = f"redis://default:{REDIS_PASSWORD}@redis:6379/0"
-result_backend = f"redis://default:{REDIS_PASSWORD}@redis:6379/0"
+# Construct broker and backend URLs for local Redis
+broker_url = "redis://127.0.0.1:6379/0"  # Use localhost for local Redis
+result_backend = "redis://127.0.0.1:6379/0"  # Use localhost for local Redis
 
 # Connection settings
 broker_connection_retry = True
@@ -36,7 +42,7 @@ def test_redis_connection(sender: Any, instance: Any, **kwargs: Any) -> None:
     logger = logging.getLogger("celery.tasks")
     try:
         redis_client = redis.Redis(
-            host="redis",
+            host="127.0.0.1",
             port=6379,
             db=0,
             username="default",
