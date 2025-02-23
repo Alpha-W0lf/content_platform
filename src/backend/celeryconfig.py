@@ -1,36 +1,15 @@
+# src/backend/celeryconfig.py
 import logging
-import os
-import sys
 
-from typing import Any
+# Use localhost without authentication for testing.
+broker_url = "redis://localhost:6379/0"
+result_backend = "redis://localhost:6379/0"
 
-import redis
-from celery.signals import celeryd_after_setup
+# Basic logging configuration (adjust as needed).
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Log all environment variables at the beginning of celeryconfig.py
-print("Environment variables at celeryconfig.py startup:")
-for name, value in os.environ.items():
-    print(f"{name}={value}")
-
-
-def validate_env(var_name: str, var_type: type) -> Any:
-    """Validate and cast environment variable to specified type."""
-    value = os.getenv(var_name)
-    print(f"validate_env: {var_name}={value}")  # Log value here
-    if value is None and "pytest" in sys.argv[0]:
-        logger.warning(f"{var_name} not set during testing; using default")
-        return "testpassword" if var_name == "REDIS_PASSWORD" else None
-    if value is None:
-        raise ValueError(f"{var_name} environment variable is required")
-    return value
-
-
-REDIS_PASSWORD = validate_env("REDIS_PASSWORD", str)  # Original env var loading
-
-# Construct broker and backend URLs for local Redis
-broker_url = "redis://127.0.0.1:6379/0"  # Use localhost for local Redis
-result_backend = "redis://127.0.0.1:6379/0"  # Use localhost for local Redis
-
+# --- Rest of your Celery configuration --- (Keep other settings as before)
 # Connection settings
 broker_connection_retry = True
 broker_connection_retry_on_startup = True
@@ -38,71 +17,6 @@ broker_connection_max_retries = 10
 broker_connection_timeout = 30
 broker_heartbeat = 10
 broker_pool_limit = 10
-
-
-# Redis connection test on worker startup
-@celeryd_after_setup.connect
-def test_redis_connection(sender: Any, instance: Any, **kwargs: Any) -> None:
-    logger = logging.getLogger("celery.tasks")
-    try:
-        redis_client = redis.Redis(
-            host="127.0.0.1",
-            port=6379,
-            db=0,
-            username="default",
-            password=REDIS_PASSWORD,
-            socket_timeout=5,
-            socket_connect_timeout=5,
-        )
-        redis_info = redis_client.info()
-        version_info = redis_info.get("redis_version", "unknown")
-        logger.info(
-            "Redis connection test successful on worker startup. "
-            f"Version: {version_info}"
-        )
-    except redis.AuthenticationError as e:
-        logger.error(f"Redis authentication failed on worker startup: {str(e)}")
-        # Safe to use len() since we validated REDIS_PASSWORD is not None
-        logger.debug(
-            "Redis connection details - "
-            f"Password length: {len(REDIS_PASSWORD)}, "
-            f"URL pattern: {broker_url.split('@')[0]}@..."
-        )
-        raise
-    except redis.ConnectionError as e:
-        logger.error(f"Redis connection failed on worker startup: {str(e)}")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected Redis error on worker startup: {str(e)}")
-        raise
-
-
-# Enhanced logging configuration
-worker_hijack_root_logger = True  # Changed to True to properly handle redirected logs
-worker_log_color = True
-worker_log_format = (
-    "[%(asctime)s: %(levelname)s/%(processName)s] [%(name)s] %(message)s"
-)
-worker_task_log_format = (
-    "[%(asctime)s: %(levelname)s/%(processName)s] "
-    "[%(task_id)s] [%(name)s] "
-    "%(message)s"
-)
-
-# Debug logging setup
-logging.basicConfig(level=logging.DEBUG, format=worker_log_format)
-logger = logging.getLogger("celery")
-logger.setLevel(logging.DEBUG)
-
-# Prevent duplicate logging
-for handler in logging.root.handlers:
-    handler.addFilter(lambda record: record.name != "celery")
-
-# Print connection details for debugging
-print(f"Celery broker URL pattern: {broker_url.split('@')[0]}@...")
-print(f"Celery result backend URL pattern: {result_backend.split('@')[0]}@...")
-print(f"Redis password length: {len(REDIS_PASSWORD)}")
-print("Redis user: default")  # Removed unnecessary f-string
 
 # Task execution settings
 task_serializer = "json"
@@ -134,3 +48,15 @@ broker_transport_options = {"visibility_timeout": 43200}  # 12 hours
 # Error handling settings
 task_reject_on_worker_lost = True
 task_acks_late = True
+
+# Enhanced logging configuration
+worker_hijack_root_logger = True  # Changed to True to properly handle redirected logs
+worker_log_color = True
+worker_log_format = (
+    "[%(asctime)s: %(levelname)s/%(processName)s] [%(name)s] %(message)s"
+)
+worker_task_log_format = (
+    "[%(asctime)s: %(levelname)s/%(processName)s] "
+    "[%(task_id)s] [%(name)s] "
+    "%(message)s"
+)

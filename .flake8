@@ -27,6 +27,8 @@ ignore =
     E261
     E262
     E265
+    E302
+    E114
 
 # Which errors to check for
 select = C,E,F,W,B,B950

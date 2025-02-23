@@ -24,6 +24,7 @@ async def test_create_project(db_session: AsyncSession) -> None:
     db_session.add(project)
     await db_session.commit()
 
+    # Use a query to verify, not just the returned object.
     result = await db_session.execute(select(Project).filter_by(id=project.id))
     saved_project = result.scalar_one()
 
@@ -42,12 +43,12 @@ async def test_project_status_transition(db_session: AsyncSession) -> None:
     await db_session.commit()
 
     project.status = ProjectStatus.PROCESSING
-    await db_session.commit()
+    await db_session.commit() # Commit the change!
 
+    # Verify by querying, not just the in-memory object
     result = await db_session.execute(select(Project).filter_by(id=project.id))
     updated_project = result.scalar_one()
     assert updated_project.status == ProjectStatus.PROCESSING
-
 
 @pytest.mark.asyncio
 async def test_project_asset_relationship(db_session: AsyncSession) -> None:
@@ -64,7 +65,6 @@ async def test_project_asset_relationship(db_session: AsyncSession) -> None:
         asset_type="script",
         path="/path/to/script",
     )
-
     asset2 = Asset(
         id=uuid.uuid4(),
         project_id=project.id,
@@ -72,19 +72,20 @@ async def test_project_asset_relationship(db_session: AsyncSession) -> None:
         path="/path/to/video",
     )
 
-    project.assets = [asset1, asset2]
-    db_session.add(project)
+    project.assets = [asset1, asset2]  # Correct way to establish the relationship
+    db_session.add(project) # Only add the project. Assets added through cascade.
     await db_session.commit()
 
+    # Use joinedload to load related assets efficiently
     result = await db_session.execute(
         select(Project).filter_by(id=project.id).options(joinedload(Project.assets))
     )
-    saved_project = result.unique().scalar_one()  # Added unique() call
+    saved_project = result.scalars().unique().one()  # Use scalars().unique().one()
+
     assert len(saved_project.assets) == 2
     assert all(isinstance(asset, Asset) for asset in saved_project.assets)
     assert any(asset.asset_type == "script" for asset in saved_project.assets)
     assert any(asset.asset_type == "video" for asset in saved_project.assets)
-
 
 @pytest.mark.asyncio
 async def test_project_cascade_delete(db_session: AsyncSession) -> None:
@@ -94,32 +95,28 @@ async def test_project_cascade_delete(db_session: AsyncSession) -> None:
         name="Test Project",
         status=ProjectStatus.CREATED,
     )
-
     asset = Asset(
         id=uuid.uuid4(),
         project_id=project.id,
         asset_type="script",
         path="/path/to/script",
     )
-
-    project.assets = [asset]
-    db_session.add(project)
+    project.assets = [asset]  # Establish relationship
+    db_session.add(project) # Only add parent, cascade works
     await db_session.commit()
 
-    # Store the asset ID before deletion
-    asset_id = asset.id
+    deleted_asset_id = asset.id #capture asset id for verification
 
     await db_session.delete(project)
     await db_session.commit()
 
-    # Verify project is deleted
+    # Verify project is deleted.
     project_result = await db_session.execute(select(Project).filter_by(id=project.id))
     assert project_result.scalar_one_or_none() is None
 
-    # Verify associated asset is deleted
-    asset_result = await db_session.execute(select(Asset).filter_by(id=asset_id))
+    # Verify associated asset is deleted.
+    asset_result = await db_session.execute(select(Asset).filter_by(id=deleted_asset_id))  # Use captured ID
     assert asset_result.scalar_one_or_none() is None
-
 
 @pytest.mark.asyncio
 async def test_project_timestamps(db_session: AsyncSession) -> None:
@@ -129,14 +126,17 @@ async def test_project_timestamps(db_session: AsyncSession) -> None:
     db_session.add(project)
     await db_session.commit()
 
+    # Need to get the precise timestamps from the DB, as they have higher resolution
+    await db_session.refresh(project)
+
     assert project.created_at >= start_time
     assert project.updated_at >= start_time
 
-    # Test update
+    # Test update. Use a separate variable.
     original_updated_at = project.updated_at
-    await db_session.refresh(project)
-    project.name = "Updated Name"
+    project.name = "Updated Name" # Modify to trigger onupdate
     await db_session.commit()
+    await db_session.refresh(project) #refresh to load
 
     assert project.updated_at > original_updated_at
     assert project.created_at == project.created_at  # Should not change
