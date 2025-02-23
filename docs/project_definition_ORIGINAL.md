@@ -17,17 +17,17 @@ Okay, let's define a robust and ambitious Version 1.0, incorporating your goals 
 
 
 
-v0.0 Goals (Simplified Local Development - No Docker):
+v0.0 Goals (Client-Server Foundation):
 
-Local Client-Server Architecture: The core goal of v0.0 is to separate the backend (FastAPI, Celery, Redis, PostgreSQL) from the frontend (Next.js), and have them communicate exclusively over the network, even during local development, but without Docker.
+Establish a Client-Server Architecture: The core goal of v0.0 is to separate the backend (FastAPI, Celery, Redis, PostgreSQL) from the frontend (Next.js), and have them communicate exclusively over the network, even during local development.
 
-Run the Backend Locally on the M2 Max: The M2 Max will be your "server" for now. All backend components will run directly on the host OS, not in Docker.
+Run the Backend on the M2 Max: The M2 Max will be your "server" for now. All backend components will run on it.
 
-Run the Frontend Locally on Either Machine: You should be able to run the Next.js frontend directly on either your M2 Max or your M2 Pro and have it connect to the backend on the M2 Max.
+Run the Frontend on Either Machine: You should be able to run the Next.js frontend on either your M2 Max or your M2 Pro and have it connect to the backend on the M2 Max.
 
 Simplified Functionality: The functionality will be extremely minimal – essentially just proving that the communication works. We're focusing on the infrastructure, not the features.
 
-Docker Compose for Backend: The backend services (API, Celery, Redis, PostgreSQL) will be managed with Docker Compose on the M2 Max. This is crucial for portability. However, Docker containerization and deployment will be deferred until after v1.0 is complete. All development will be done locally and the app will be built to run locally for now. All infrastructure and docker work that has already been done will be paused and saved for later.
+Docker Compose for Backend: The backend services (API, Celery, Redis, PostgreSQL) will be managed with Docker Compose on the M2 Max. This is crucial for portability.
 
 Laying the groundwork for multi-machine use (single server, multiple clients): v0.0 needs to be designed so that it can be used from any computer on your network, not just the machine it's running on.
 
@@ -109,7 +109,7 @@ CELERY_CONFIG = {
 
 v0.0 Deliverables:
 
-Working FastAPI Backend (Local Setup): Focus on best practices, code quality, and developer experience.
+Working FastAPI Backend (Dockerized):
 
 A single POST /projects endpoint that:
 - Uses Pydantic model for request validation:
@@ -153,11 +153,11 @@ Returns the project's status (initially, this will always be "CREATED").
 
 A GET /health endpoint (you already have this).
 
-Runs locally, not within a Docker container.
+Runs within a Docker container, managed by Docker Compose.
 
-Working Celery Worker (Local Setup):
+Working Celery Worker (Dockerized):
 
-A Celery worker, also running locally (not in Docker).
+A Celery worker, also running in a Docker container.
 
 For now, it doesn't need to actually do anything. The important thing is that it connects to Redis and is ready to receive tasks.
 
@@ -170,11 +170,11 @@ Error Handling:
 - All errors viewable in Grafana dashboards
 - Alerts on task failure patterns
 
-Working Redis and PostgreSQL (Local Setup):
+Working Redis and PostgreSQL (Dockerized):
 
-These are configured to run locally, not within Docker.
+These are already in your docker-compose.yml.
 
-Basic Next.js Frontend (Local Setup): Focus on best practices, code quality, and developer experience.
+Basic Next.js Frontend:
 
 A single page.
 
@@ -348,11 +348,9 @@ Monitoring Integration:
    - Error logging
    - Audit logging
 
-Version 0.1 Goals (MVP - Minimal Viable Product - Local Development): Focus on best practices, code quality, and developer experience. Ensure that all code is written to be extensible, maintainable, and high quality. We will always adhere to best practices and design patterns, and write code to be extensible, maintainable, and high quality throughout all development phases, with a strong emphasis on modularity and extensibility.
+Version 0.1, MVP:
 
-Video Generation Tool - Version 0.1 (MVP) Summary - Local Development
-
-Video Generation Tool - Version 0.1 (MVP) Summary - Local Development
+Video Generation Tool - Version 0.1 (MVP) Summary
 
 Objective:
 
