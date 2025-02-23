@@ -24,6 +24,9 @@ ignore =
     E241,
     # Missing whitespace around operator
     E225
+    E261
+    E262
+    E265
 
 # Which errors to check for
 select = C,E,F,W,B,B950

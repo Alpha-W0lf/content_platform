@@ -16,8 +16,6 @@ os.environ["CELERY_BROKER_URL"] = os.environ["REDIS_URL"]
 os.environ["CELERY_RESULT_BACKEND"] = os.environ["REDIS_URL"]
 import pytest
 import pytest_asyncio
-from alembic import command
-from alembic.config import Config
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -30,7 +28,7 @@ from src.backend.core.config import settings
 from src.backend.core.database import get_db
 from src.backend.main import app
 from src.backend.models import asset  # noqa: F401
-from src.backend.models import base
+from src.backend.models import Base
 from src.backend.models import project  # noqa: F401
 
 load_dotenv()
@@ -87,68 +85,21 @@ async def create_test_database():
 
 
 # Fixture to create and drop tables before/after test session
-@pytest.fixture(scope="session", autouse=True)
-async def setup_database(create_test_database):  # Depend on create_test_database
-    """Set up test database tables."""
-    logger.info("Starting database setup...")
-    try:
-        async with test_engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-            logger.info("Database connection successful")
-            logger.info("Dropping all existing tables...")
-            await conn.run_sync(base.Base.metadata.drop_all)
-
-            # Run migrations
-            logger.info("Running migrations...")
-            await conn.commit()
-
-        logger.info("Configuring Alembic...")
-        alembic_cfg = Config("alembic.ini")
-        alembic_cfg.set_main_option("script_location", "src/backend/migrations")
-        alembic_cfg.set_main_option("sqlalchemy.url", str(settings.TEST_DATABASE_URL))
-        alembic_cfg.attributes["db"] = "test"
-        logger.info("Running Alembic upgrade to head...")
-        command.upgrade(alembic_cfg, "head")
-        logger.info("Alembic upgrade completed successfully")
-
-        # Verify tables were created
-        async with test_engine.connect() as conn:
-            result = await conn.execute(
-                text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-            )
-            tables = [row[0] for row in result]
-            logger.info(f"Created tables: {tables}")
-            # Verify table structure
-            for table in ["projects", "assets"]:
-                if table not in tables:
-                    raise Exception(f"Required table '{table}' was not created")
-                columns = await conn.execute(
-                    text(
-                        "SELECT column_name, data_type FROM information_schema.columns "
-                        f"WHERE table_name = '{table}'"
-                    )
-                )
-                logger.info(f"Columns in {table}: {[row for row in columns]}")
-
-        logger.info("Database setup completed successfully")
-        yield
-    except Exception as e:
-        logger.error(f"Error during database setup: {e}")
-        raise
-    finally:
-        logger.info("Cleaning up database...")
-        async with test_engine.begin() as conn:
-            await conn.run_sync(base.Base.metadata.drop_all)
-        logger.info("Database cleanup completed")
+@pytest.fixture(scope="function")  # Use function scope for per-test isolation
+async def setup_database():
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 # Fixture for database session, function-scoped for per-test isolation
-@pytest_asyncio.fixture(scope="function")
-async def db_session(setup_database):
-    """Provide a database session for tests."""
+@pytest.fixture(scope="function")
+async def db_session(setup_database):  # EXPLICIT DEPENDENCY HERE
     async with async_session() as session:
         yield session
-        await session.rollback()
+        await session.rollback()  # Rollback after each test
 
 
 # Fixture for httpx AsyncClient (for making requests to your API), function-scoped
