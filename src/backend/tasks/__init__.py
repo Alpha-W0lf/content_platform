@@ -20,6 +20,8 @@ logger.debug(f"REDIS_PASSWORD (before Celery init): {os.getenv('REDIS_PASSWORD')
 # Log current working directory
 logger.debug(f"Current working directory: {os.getcwd()}")
 
+# Log REDIS_PASSWORD just before Celery init
+logger.debug(f"REDIS_PASSWORD (just before Celery init): {os.getenv('REDIS_PASSWORD')}")
 
 celery_app = Celery("content_platform")
 

@@ -2,10 +2,17 @@
 Pytest fixtures for backend tests.
 """
 
+from dotenv import load_dotenv
+
 import asyncio
 import logging
 import os
-from typing import AsyncGenerator, Generator
+
+load_dotenv()
+os.environ["REDIS_PASSWORD"] = os.environ.get("REDIS_PASSWORD", "testpassword")
+os.environ["REDIS_URL"] = "redis://:testpassword@redis:6379/0"
+os.environ["CELERY_BROKER_URL"] = os.environ["REDIS_URL"]
+os.environ["CELERY_RESULT_BACKEND"] = os.environ["REDIS_URL"]
 
 import pytest
 import pytest_asyncio
@@ -23,25 +30,20 @@ from sqlalchemy.ext.asyncio import (
 from src.backend.core.config import settings
 from src.backend.core.database import get_db
 from src.backend.main import app
-from src.backend.models.asset import Asset  # noqa: F401
-from src.backend.models.base import Base
-from src.backend.models.project import Project  # noqa: F401
+from src.backend.models import asset  # noqa: F401
+from src.backend.models import base
+from src.backend.models import project  # noqa: F401
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+load_dotenv() # Load environment variables from .env file at the root of the project
+
 logger = logging.getLogger(__name__)
 
-# --- Database Setup ---
-TEST_DATABASE_URL = settings.TEST_DATABASE_URL  # Use settings
-
-logger.info(
-    f"TEST_DATABASE_URL from settings: {TEST_DATABASE_URL}"
-)  # Log TEST_DATABASE_URL
-
-# Create async engine using the configured test database URL
+logger.info(f"TEST_DATABASE_URL: {settings.TEST_DATABASE_URL}")
+if not settings.TEST_DATABASE_URL:
+    raise ValueError("TEST_DATABASE_URL is not set in settings")
 test_engine: AsyncEngine = create_async_engine(
-    TEST_DATABASE_URL,
-    echo=True,  # Enable SQL logging
+    settings.TEST_DATABASE_URL,
+    echo=True,
     future=True,
 )
 
@@ -80,7 +82,7 @@ async def create_test_database():
     await default_engine.dispose()
 
 
-# Fixture to create and drop tables before/after the test session
+# Fixture to create and drop tables before/after test session
 @pytest.fixture(scope="session", autouse=True)
 async def setup_database(create_test_database):  # Depend on create_test_database
     """Set up test database tables."""
@@ -90,7 +92,7 @@ async def setup_database(create_test_database):  # Depend on create_test_databas
             await conn.execute(text("SELECT 1"))
             logger.info("Database connection successful")
             logger.info("Dropping all existing tables...")
-            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(base.Base.metadata.drop_all)
 
             # Run migrations
             logger.info("Running migrations...")
@@ -126,63 +128,40 @@ async def setup_database(create_test_database):  # Depend on create_test_databas
 
         logger.info("Database setup completed successfully")
         yield
-
     except Exception as e:
         logger.error(f"Error during database setup: {e}")
         raise
-
     finally:
-        # Clean up after tests
+        logger.info("Cleaning up database...")
         async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-            logger.info("Database cleanup completed")
+            await conn.run_sync(base.Base.metadata.drop_all)
+        logger.info("Database cleanup completed")
 
 
 # Fixture for database session, function-scoped for per-test isolation
 @pytest_asyncio.fixture(scope="function")
-async def db_session(setup_database: None) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(setup_database):
     """Provide a database session for tests."""
     async with async_session() as session:
-        try:
-            yield session
-            await session.rollback()  # Rollback after each test
-        except Exception:
-            await session.rollback()  # Rollback in case of any exceptions
-            raise
-        finally:
-            await session.close()
+        yield session
+        await session.rollback()
 
 
 # Fixture for httpx AsyncClient (for making requests to your API), function-scoped
 @pytest_asyncio.fixture(scope="function")
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+async def client(db_session: AsyncSession):
     """Test client fixture that uses the test database session."""
 
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+    async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_env() -> None:
-    """Set up test environment variables."""
-    # Set default Redis password if not configured
-    redis_password = settings.REDIS_PASSWORD or "testpassword"
-    redis_url = f"redis://:{redis_password}@redis:6379/0"
-
-    # Set Redis-related environment variables
-    os.environ["REDIS_PASSWORD"] = redis_password
-    os.environ["REDIS_URL"] = redis_url
-    os.environ["CELERY_BROKER_URL"] = redis_url
-    os.environ["CELERY_RESULT_BACKEND"] = redis_url
 
 
 @pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+def event_loop():
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop

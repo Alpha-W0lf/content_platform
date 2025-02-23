@@ -10,9 +10,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://tom:@127.0.0.1:5432/content_platform"
     )
-    TEST_DATABASE_URL: str = Field(default="")
-    REDIS_URL: Optional[str] = None
-    REDIS_PASSWORD: Optional[str] = None
+    TEST_DATABASE_URL: str = Field(default="postgresql+asyncpg://testuser:testpass@localhost:5432/test_content_platform")
+    REDIS_PASSWORD: str = Field(default="testpassword")
 
     CELERY_BROKER_URL: str = Field(default="redis://redis:6379/0")
     CELERY_RESULT_BACKEND: str = Field(default="redis://redis:6379/0")
@@ -40,7 +39,7 @@ class Settings(BaseSettings):
         return v or ""
 
     model_config = {
-        "extra": "allow",  # This will allow extra fields in the environment variables
+        "extra": "allow", # This will allow extra fields in the environment variables
         "env_file": "../.env",
     }
 
