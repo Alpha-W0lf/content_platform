@@ -5,14 +5,21 @@ exclude =
     build,
     dist,
     *.egg-info,
-    venv,
-    .venv,
+    *venv*,
     .env,
     env,
     .tox,
+    venv/*,
+    .venv/*,
+    */venv/*,
+    */.venv/*,
     site-packages,
     */migrations/*,
-    node_modules
+    node_modules,
+    */.pytest_cache/*,
+    */.mypy_cache/*,
+    .pytest_cache,
+    .mypy_cache
 
 # Recommended line length to match black's default
 max-line-length = 88
@@ -24,3 +31,5 @@ extend-ignore = E203, W503
 
 # Select specific error codes to enable
 select = C,E,F,W,B,B950
+
+dummy_setting = test

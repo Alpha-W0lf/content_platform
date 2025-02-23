@@ -7,154 +7,107 @@ show_help_message() {
     echo "   Note: Linting and type issues will need to be fixed manually."
 }
 
-# Function to run checks in Docker
-run_in_docker() {
-    echo "Running checks in Docker environment..."
-    
-    # Create a temporary directory for Docker operations
-    TEMP_DIR=$(mktemp -d)
-    
-    # Copy source files to temp directory
-    echo "📁 Copying files for processing..."
-    cp -r src/ "$TEMP_DIR/"
-    
-    # Use the API container since it has our Python environment
-    docker compose exec -T api sh -c "
-        cd /app && \
-        echo '🔍 Running isort...' && \
-        isort --check-only src/ && \
-        echo '✅ isort complete' && \
-        echo '🔍 Running black...' && \
-        black --check src/ && \
-        echo '✅ black complete' && \
-        echo '🔍 Running flake8...' && \
-        flake8 src/ && \
-        echo '✅ flake8 complete' && \
-        echo '🔍 Running mypy...' && \
-        mypy --config-file mypy.ini src/ && \
-        echo '✅ mypy complete' && \
-        if command -v pyright &> /dev/null; then
-            echo '🔍 Running pyright...' && \
-            pyright src/ && \
-            echo '✅ pyright complete'
-        fi && \
-        echo '✨ All checks completed!'
-    "
-    
-    # Store the exit code
-    EXIT_CODE=$?
-    
-    # Clean up
-    rm -rf "$TEMP_DIR"
-
-    # Show help message regardless of result
-    show_help_message
-    
-    # Return the exit code from the Docker command
-    return $EXIT_CODE
-}
-
-# Function to run checks and fix locally
-run_locally() {
+# Function to run checks locally
+run_checks() {
     echo "Running checks in local environment..."
     # Activate virtual environment
+    if [ ! -f src/backend/.venv/bin/activate ]; then
+        echo "❌ Virtual environment not found at src/backend/.venv. Please set it up first."
+        exit 1
+    fi
     source src/backend/.venv/bin/activate
 
-    echo "Running code quality checks..."
-
     # Initialize error tracking
-    local HAS_ERRORS=0
+    HAS_ERRORS=0
 
-    # Format code
-    echo "🔍 Running isort..."
-    isort --check-only src/ || HAS_ERRORS=1
-    echo "✅ isort complete"
+    # Define a helper function to run and display results
+    run_check() {
+        local tool_name="$1"
+        local command="$2"
+        echo "🔍 Running $tool_name..."
+        # Execute the command and capture both stdout and stderr
+        OUTPUT=$($command 2>&1)
+        RESULT=$?
+        echo "$OUTPUT"
+        if [ $RESULT -eq 0 ]; then
+            echo "✅ $tool_name complete: No errors found"
+        else
+            echo "❌ $tool_name failed!"
+            HAS_ERRORS=1
+        fi
+        echo "----------------------------------------"
+    }
 
-    echo "🔍 Running black..."
-    black --check src/ || HAS_ERRORS=1
-    echo "✅ black complete"
-
-    # Run linting
-    echo "🔍 Running flake8..."
-    flake8 src/ || HAS_ERRORS=1
-    echo "✅ flake8 complete"
-
-    # Run type checking
-    echo "🔍 Running mypy..."
-    mypy --config-file mypy.ini src/ || HAS_ERRORS=1
-    echo "✅ mypy complete"
-
-    # Optional: Run pyright (if installed globally)
+    # Run each check
+    run_check "isort" "isort --check-only src/"
+    run_check "black" "black --check src/"
+    if [ -f .flake8 ]; then
+        run_check "flake8" "flake8 src/"
+    else
+        run_check "flake8" "flake8 src/ --exclude src/backend/.venv"
+    fi
+    if [ -f mypy.ini ]; then
+        run_check "mypy" "mypy --config-file mypy.ini src/"
+    else
+        run_check "mypy" "mypy src/"
+    fi
     if command -v pyright &> /dev/null; then
-        echo "🔍 Running pyright..."
-        pyright src/ || HAS_ERRORS=1
-        echo "✅ pyright complete"
+        run_check "pyright" "pyright src/"
+    else
+        echo "⚠️ pyright not installed locally, skipping..."
     fi
 
     # Deactivate virtual environment
     deactivate
 
+    # Final status
     if [ $HAS_ERRORS -eq 0 ]; then
         echo "✨ All checks completed successfully!"
     else
-        echo -e "\n❌ Some checks failed. Please fix the issues above."
+        echo "❌ Some checks failed. See details above."
     fi
 
-    # Show help message regardless of result
+    # Show help message
     show_help_message
 
     return $HAS_ERRORS
 }
 
-# Function to fix formatting
+# Function to fix formatting locally
 fix_formatting() {
-    echo "Fixing code formatting..."
+    echo "Fixing code formatting in local environment..."
+    if [ ! -f src/backend/.venv/bin/activate ]; then
+        echo "❌ Virtual environment not found at src/backend/.venv. Please set it up first."
+        exit 1
+    fi
+    source src/backend/.venv/bin/activate
+
     local HAS_ERRORS=0
 
-    if docker compose ps | grep -q "content_platform-api.*Up"; then
-        echo "🔍 Running formatters in Docker environment..."
-        docker compose exec -T api sh -c "
-            cd /app && \
-            echo '🔍 Running isort...' && \
-            isort src/ && \
-            echo '✅ isort complete' && \
-            echo '🔍 Running black...' && \
-            black src/ && \
-            echo '✅ black complete'
-        " || HAS_ERRORS=1
-    else
-        echo "🔍 Running formatters in local environment..."
-        source src/backend/.venv/bin/activate
-        echo "🔍 Running isort..."
-        isort src/ || HAS_ERRORS=1
-        echo "✅ isort complete"
-        echo "🔍 Running black..."
-        black src/ || HAS_ERRORS=1
-        echo "✅ black complete"
-        deactivate
-    fi
+    echo "🔍 Running isort..."
+    isort src/ || HAS_ERRORS=1
+    echo "✅ isort complete"
+
+    echo "🔍 Running black..."
+    black src/ || HAS_ERRORS=1
+    echo "✅ black complete"
+
+    deactivate
 
     if [ $HAS_ERRORS -eq 0 ]; then
         echo "✨ Formatting fixed successfully!"
-        return 0
     else
         echo "❌ Some formatting operations failed. Please check the output above."
-        return 1
     fi
+
+    return $HAS_ERRORS
 }
 
 # Parse command line arguments
 if [ "$1" = "--fix" ]; then
     fix_formatting
     exit $?
-fi
-
-# Check if Docker is running and containers are up
-if docker compose ps | grep -q "content_platform-api.*Up"; then
-    run_in_docker
-    exit $?
 else
-    echo "Docker not running or API container not found, falling back to local environment..."
-    run_locally
+    run_checks
     exit $?
 fi
