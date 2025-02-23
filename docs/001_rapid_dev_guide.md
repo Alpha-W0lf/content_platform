@@ -1,203 +1,289 @@
-# Content Platform Rapid Development Guide 001
+# Task Tracking
 
-## Task Tracking
+- [ ] **Backend (Local - M2 Max)**
+    - [x] PostgreSQL Setup (Local - M2 Max)
+    - [x] Python Environment Setup (Local - M2 Max)
+    - [x] Database Migrations (Local - M2 Max)
+    - [ ] Backend Code (Local - M2 Max)
+    - [ ] Run Backend Tests (Local - M2 Max)
+    - [ ] Run Backend Server (Local - M2 Max)
+- [ ] **Frontend (Local - M2 Max)**
+    - [ ] Frontend Setup (Local - M2 Max)
+    - [ ] Frontend Code (Local - M2 Max)
+    - [ ] Run Frontend Server (Local - M2 Max)
+    - [ ] Access Application (From M2 Pro)
+- [ ] **Testing**
+    - [ ] Backend Tests
+    - [ ] Frontend Tests
+    - [ ] Manual Testing
+- [ ] **Version Control**
+    - [ ] Commit Frequently
 
-### In Progress
+**I. Backend (Local - M2 Max)**
 
-- [ ] **Simplify API Endpoints and Tests:** Remove `name` and `notes` fields from project creation and listing, adjusting tests accordingly.
-- [ ] **Simplify Frontend:**  Ensure the frontend only uses the `topic` for project creation. Remove unnecessary UI elements.
-- [ ] **Run in Local Environment:** Use a local postgresql database and remove docker.
+1.  **PostgreSQL Setup (Local - M2 Max):**
 
-### Completed
-
-- [x] Initial project setup
-- [x] Development guide creation
-- [x] Basic folder structure
-- [x] Project Creation API endpoint
-- [x] Project Listing API endpoint
-- [x] Get project by ID API endpoint
-- [x] Project Status endpoint
-- [x] Update project via PATCH API endpoint
-- [x] Basic database models and migrations
-- [x] Basic Frontend (Next.js, Tailwind, shadcn/ui setup)
-- [x] API Tests
-- [x] Model Tests
-- [x] Basic Frontend - Project Creation
-- [x] Basic Frontend - Project Listing
-- [x] Basic Frontend - Project Detail
-- [x] Basic Error Handling
-- [x] Test Redis Connection
-- [x] Test Celery Task
-- [x] Test Process Project
-
-### Up Next (After v0.0 - DO NOT START YET)
-
-- [ ] Authentication (Clerk)
-- [ ] Celery integration
-- [ ] Asset management
-- [ ] AI features
-- [ ] UI refinements
-- [ ] More comprehensive testing
-- [ ] Deployment configuration
-
-
-# Content Platform Development Guide
-
-This document outlines the development plan for the Content Platform, focusing on a rapid, iterative approach to reach a minimal viable product (v0.0) quickly.
-
-## Guiding Principles
-
-*   **Iterative Development:** We'll build the platform in small, incremental steps, focusing on core functionality first.
-*   **"Spike, Then Test":**  For new features, we'll start with a "spike" – a quick, exploratory implementation to validate the approach. Then, we'll write targeted tests and refactor.
-*   **Defer Complexity:**  We'll postpone non-essential features and infrastructure until after v0.0 is working.
-*   **Local Development First:**  We'll primarily develop and test locally, using Docker for integration testing and deployment.  This speeds up the development loop.
-*   **"Good Enough" for v0.0:**  We'll aim for functional correctness and reasonable code quality, and always following best practices, but we won't strive for perfection in v0.0.
-*   **Prioritize Core Workflow:** We'll add user interaction, create, update, and get status.
-
-## v0.0 Feature Set (Minimal Viable Product)
-
-The goal of v0.0 is to demonstrate the core concept of the platform: creating and managing content projects.  We'll focus on the absolute minimum features needed to achieve this:
-
-*   **Project Creation:**
-    *   Users can create a project with a **topic** (and nothing else).
-    *   Projects are stored in the PostgreSQL database.
-    *   No authentication (for now).
-*   **Project Listing:**
-    *   Users can view a list of all projects, showing their topic and status.
-* **Project Get by ID**
-    * Users can view the details of a project
-* **Project Status Update**
-    * Users can update the status of a project.
-*   **Project Status:**
-    *   Projects have a status (CREATED, PROCESSING, COMPLETED, ERROR).
-    *   Initially, status changes will be done via direct API calls (no actual processing).
-*   **Basic Frontend:**
-    *   A simple Next.js frontend to interact with the API (list projects, create projects).
-*   **NO Celery/Redis (for now):** Asynchronous task processing is deferred.
-*   **NO Asset Management (for now):** No file uploads, storage, or relationships.
-* **Minimal Error Handling** Add basic error handling for database interactions and API endpoint.
-* **Basic API Documentation:** Create basic documentation for the API endpoints.
-
-## Tech Stack
-
-*   **Backend:** FastAPI, SQLAlchemy, PostgreSQL
-*   **Frontend:** Next.js, Tailwind CSS, shadcn/ui
-*   **Database:** PostgreSQL
-*   **Testing:** pytest, httpx (for API tests)
-*   **Code Quality:** black, isort, flake8, mypy (with relaxed settings initially)
-*   **Containerization:** Docker, Docker Compose (for integration testing and deployment)
-
-## Development Workflow
-
-1.  **Local Setup:**
-    *   Create a Python virtual environment.
-    *   Install backend dependencies: `pip install -r src/backend/requirements.txt`
-    *   Set up a local PostgreSQL database (or use a separate Docker Compose setup for *just* the database).  **This is key for fast development.**
-    *   Configure your `src/backend/.env` file to point to the local database.
-    *   Run Alembic migrations: `alembic upgrade head` (from within `src/backend`).
-
-2.  **Backend Development (Iterative):**
-    *   **Spike:** Implement a simplified version of a feature (e.g., project creation) *without* tests. Use print statements for debugging. Work directly with your local Python environment and local database.
-    *   **Test:** Write *targeted* tests for the core functionality.
-    *   **Refactor:** Improve the code structure, add error handling, and add docstrings.
-    *   **Repeat:** Move on to the next feature.
-
-3.  **Frontend Development (Minimal UI):**
-    *   Create basic Next.js pages to interact with your API.
-    *   Use shadcn/ui components for consistent styling.
-    *   Keep the UI as simple as possible.
-
-4.  **Local Testing:**
-    *   Run your FastAPI server locally: `uvicorn src.backend.main:app --reload`
-    *   Run your Next.js frontend locally: `npm run dev` (from within `src/frontend`)
-    *   Interact with your application through the browser and an API client (like Postman or `httpie`).
-    *   Run your tests frequently: `pytest` (from within `src/backend`)
-
-5.  **Docker Integration (Periodic):**
-    *   **IMPORTANT:** Once a feature is *fully working and tested locally*, test it within Docker to ensure everything works correctly in the containerized environment. This is your *integration* testing step.
-    *   Use `docker-compose build` and `docker-compose up`.
-    *   Use `docker-compose logs` to view logs.
-
-6.  **Iterate:** Continue this process, adding features and refactoring as you go.
-
-## Detailed Steps (Initial Setup)
-
-This section expands on the initial setup steps:
-
-1.  **Virtual Environment:**
-    *   From your project's root directory:
+    *   **Install PostgreSQL 15:**
         ```bash
-        cd src/backend
+        brew install postgresql@15
+        ```
+    *   **Start PostgreSQL:**
+        ```bash
+        brew services start postgresql@15
+        ```
+    *   **Create Databases:**
+        ```bash
+        createdb -U user -w content_platform_dev
+        createdb -U user -w test_content_platform
+        ```
+        (Ensure your `.env` file in `src/backend` points to `content_platform_dev`, and `TEST_DATABASE_URL` points to `test_content_platform`, both with user `user` and password `password`)
+
+2.  **Python Environment Setup (Local - M2 Max):** - venv setup should already be done. just verify when you get to this step.
+
+    *   **Create/Activate Virtual Environment:** (Inside `src/backend`)
+        ```bash
         python3 -m venv .venv
         source .venv/bin/activate  # or .venv\Scripts\activate on Windows
         ```
-
-2.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Local PostgreSQL:**
-
-    *   **Install PostgreSQL locally.** Follow the instructions for your operating system (macOS). Make sure the PostgreSQL server is running.
-
-
-4.  **.env File:**
-
-    Create (or modify) `src/backend/.env`:
-    ```
-    DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/content_platform_dev
-    ```
-    Adjust `DATABASE_URL` to match your *local* PostgreSQL setup.  If using Option 2 above, use `DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/content_platform_dev` (note `postgres` as the hostname, not `localhost`).  The `TEST_DATABASE_URL` in `.env` should *still* point to the `test_content_platform` database.
-
-5.  **Alembic Migrations:**
-
-    From within the `src/backend` directory:
-    ```
-    alembic upgrade head
-    ```
-
-6.  **Test Project Creation:**
-
-    *   Run your backend.
-    *   Send a `POST` request to `http://localhost:8000/api/v1/projects` with the following body:
-        ```json
-        {
-            "topic": "Test Topic"
-        }
+    *   **Install Dependencies:** (Inside `src/backend`)
+        ```bash
+        pip install -r requirements.txt
         ```
-    *   Verify that the request returns a successful status code.
-    *   Check the `projects` table inside the database.
+       *   **`requirements.txt` (Ensure these exact versions):**
+            ```
+            fastapi==0.104.1
+            uvicorn[standard]==0.24.0
+            sqlalchemy==2.0.23
+            asyncpg==0.29.0
+            alembic==1.13.1
+            pydantic==2.5.2
+            pydantic-settings==2.1.0
+            python-dotenv==1.0.0
+            pytest==7.4.3
+            pytest-asyncio==0.23.2
+            httpx==0.25.2
+            python-multipart==0.0.6
+            python-slugify==8.0.1
+            psycopg2-binary==2.9.9 #DB connection errors if not installed
 
-## Code Style and Best Practices
+            # Development dependencies
+            mypy==1.8.0
+            flake8==7.0.0
+            flake8-import-order==0.18.2
+            pylint==3.1.0
+            black==24.2.0
+            isort==5.13.2
+            autoflake==2.2.1
+            types-redis==4.6.0.20240106
+            pyright==1.1.394
+            ```
 
-*   **Follow PEP 8:** Use consistent naming conventions, indentation, and whitespace. Your linters will help enforce this.
-*   **Docstrings:** Write clear docstrings for all functions and classes.
-*   **Type Hints:** Use type hints throughout your code.
-*   **Keep Functions Small:** Break down large functions into smaller, more manageable units.
-*   **Comments:** Use comments to explain *why* you're doing something, not just *what*.
-*   **Error Handling:** Use `try...except` blocks to handle potential errors, especially in database operations and API calls. Raise `HTTPException` for API errors.
+3.  **Database Migrations (Local - M2 Max):**
 
-## Next Steps (After v0.0 - DO NOT START YET)
+    *   **Run Migrations:** (Inside `src/backend`)
+        ```bash
+        alembic upgrade head
+        ```
+        (This creates the `projects` table based on your `Project` model.)
 
-Once you have a working v0.0, you can start adding features:
+4.  **Backend Code (Local - M2 Max):**
 
-*   **Authentication:** Integrate Clerk for user authentication.
-*   **Celery Integration:** Implement asynchronous task processing with Celery and Redis.
-*   **Asset Management:** Add models and API endpoints for managing assets (scripts, narrations, videos, etc.).
-*   **AI Features:** Integrate AI models for script generation, asset creation, and video composition (as discussed in your brainstorming documents).
-*   **UI Improvements:** Build a more user-friendly and visually appealing frontend.
-*   **More Comprehensive Testing:** Add more comprehensive tests, including integration tests and end-to-end tests.
-*   **Deployment:** Configure your application for deployment to a production environment.
-```
+    *   **Ensure all backend files are in place** and match the code provided in the previous response.  This includes:
+        *   `src/backend/main.py`
+        *   `src/backend/api/projects.py`
+        *   `src/backend/core/config.py`
+        *   `src/backend/core/database.py`
+        *   `src/backend/models/project.py`
+        *   `src/backend/models/base.py`
+        *   `src/backend/models/__init__.py`
+        *   `src/backend/schemas/project.py`
+        *   `src/backend/schemas/__init__.py`
+        *   `src/backend/migrations/...` (and all subdirectories)
+        *  `src/backend/modules/__init__.py`
+        *   `src/backend/tests/conftest.py`
+        *   `src/backend/tests/test_api/test_projects.py`
+        *   `src/backend/tests/test_models/test_project.py`
+        * `src/backend/tasks/__init__.py`
 
-Key Changes and Why:
+5.  **Run Backend Tests (Local - M2 Max):**
 
-*   **Stronger Emphasis on Local Development:** I've explicitly stated that Docker is *not* for the primary development loop in v0.0, and I've highlighted the benefits of local development.
-*   **"Transitioning Back to Docker" Section:** This new section provides a clear roadmap for re-integrating Docker after the initial v0.0 development. This addresses your concern about "abandoning" Docker.
-*   **Clarified .env Usage:**  I've made it clear that you might need separate `.env` files for local development and Docker, or you can carefully manage a single `.env`.
-*   **"Spike, Then Test" Reinforcement:** I've re-emphasized this approach in the Guiding Principles and Workflow.
-* **Added Next Steps (After v0.0):** Added a section describing the next steps after v0.0 is complete.
-* **Added immediate action items at the bottom of the document.**
+    *   **Execute Tests:** (Inside `src/backend`)
+        ```bash
+        pytest src/backend/tests
+        ```
+    *   **All tests should pass.** Fix any failing tests before proceeding.
 
-This revised guide should be even clearer about the recommended workflow and how Docker fits into the overall picture. You're not abandoning Docker; you're strategically using it at the right time in the development process. The local development phase is about speed and rapid iteration; the Docker phase is about ensuring everything works correctly in a production-like environment.
+6.  **Run Backend Server (Local - M2 Max):**
+
+    *   **Start FastAPI:** (Inside `src/backend`)
+        ```bash
+        uvicorn src.backend.main:app --reload --host 0.0.0.0 --port 8000
+        ```
+    *   **Verify:** Access `http://localhost:8000/docs` in a browser on your M2 Max (or via port forwarding from your M2 Pro).  You should see the FastAPI interactive API documentation.
+
+**II. Frontend (Local - M2 Max)**
+
+1.  **Frontend Setup (Local - M2 Max):**
+
+    *   **Navigate:** `cd src/frontend`
+    *   **Install Dependencies:**
+        ```bash
+        npm install
+        ```
+      *   **`src/frontend/package.json` (Ensure these exact versions):**
+            ```json
+            {
+              "name": "content-platform",
+              "version": "0.1.0",
+              "private": true,
+              "license": "UNLICENSED",
+              "engines": {
+                "node": ">=18.17.0",
+                "npm": ">=9.0.0"
+              },
+              "scripts": {
+                "dev": "next dev",
+                "start": "next start",
+                "test": "jest",
+                "test:e2e": "cypress run",
+                "format": "prettier --write .",
+                "build": "next build",
+                "lint": "next lint"
+              },
+              "dependencies": {
+                "@clerk/nextjs": "^6.11.3",
+                "@radix-ui/react-accordion": "^1.1.2",
+                "@radix-ui/react-alert-dialog": "^1.0.5",
+                "@radix-ui/react-aspect-ratio": "^1.0.3",
+                "@radix-ui/react-avatar": "^1.0.4",
+                "@radix-ui/react-checkbox": "^1.0.4",
+                "@radix-ui/react-collapsible": "^1.0.3",
+                "@radix-ui/react-context-menu": "^2.1.5",
+                "@radix-ui/react-dialog": "^1.0.5",
+                "@radix-ui/react-dropdown-menu": "^2.0.6",
+                "@radix-ui/react-hover-card": "^1.0.7",
+                "@radix-ui/react-label": "^2.0.2",
+                "@radix-ui/react-menubar": "^1.0.4",
+                "@radix-ui/react-navigation-menu": "^1.1.4",
+                "@radix-ui/react-popover": "^1.0.7",
+                "@radix-ui/react-progress": "^1.0.3",
+                "@radix-ui/react-radio-group": "^1.1.3",
+                "@radix-ui/react-scroll-area": "^1.0.5",
+                "@radix-ui/react-select": "^2.0.0",
+                "@radix-ui/react-separator": "^1.0.3",
+                "@radix-ui/react-slider": "^1.1.2",
+                "@radix-ui/react-slot": "^1.0.2",
+                "@radix-ui/react-switch": "^1.0.3",
+                "@radix-ui/react-tabs": "^1.0.4",
+                "@radix-ui/react-toast": "^1.1.5",
+                "@radix-ui/react-toggle": "^1.0.3",
+                "@radix-ui/react-toggle-group": "^1.0.4",
+                "@radix-ui/react-tooltip": "^1.0.7",
+                "@tanstack/react-query": "^5.28.1",
+                "@tanstack/react-query-devtools": "^5.28.1",
+                "axios": "^1.6.7",
+                "class-variance-authority": "^0.7.0",
+                "clsx": "^2.1.0",
+                "cmdk": "^0.2.1",
+                "date-fns": "^2.30.0",
+                "lucide-react": "^0.375.0",
+                "next": "14.2.24",
+                "next-themes": "^0.2.1",
+                "react": "18.2.0",
+                "react-day-picker": "^8.10.0",
+                "react-dom": "18.2.0",
+                "tailwind-merge": "^2.2.1",
+                "tailwindcss-animate": "^1.0.7"
+              },
+              "devDependencies": {
+                "@types/node": "^20",
+                "@types/react": "^18",
+                "@types/react-dom": "^18",
+                "autoprefixer": "^10.4.20",
+                "eslint": "^8",
+                "eslint-config-next": "14.2.1",
+                "postcss": "^8.4.32",
+                "prettier-plugin-tailwindcss": "^0.5.13",
+                "tailwindcss": "^3.4.0",
+                "typescript": "^5.3.3",
+                "jest": "^29.7.0",
+                "cypress": "^13.6.6"
+              },
+              "overrides": {
+                "rimraf": "^5.0.0"
+              }
+            }
+
+            ```
+        *  **Install shadcn/ui Components:**
+            *   Run `npx shadcn-ui@latest init` and follow the prompts.  This will configure `components.json` and set up the necessary utilities.  **Choose the `dark` theme and `slate` as the base color.**
+            *   Install the required components (you've likely already done this):
+                ```bash
+                npx shadcn-ui@latest add button input label card
+                ```
+
+2.  **Frontend Code (Local - M2 Max):**
+
+    *   **Ensure all frontend files are in place** and match the code provided in the previous response, including:
+        *   `src/frontend/app/page.tsx`
+        *   `src/frontend/app/projects/page.tsx`
+        *   `src/frontend/app/projects/[projectId]/page.tsx`
+        *   `src/frontend/app/layout.tsx`
+        *   `src/frontend/app/globals.css` (Ensure Tailwind and shadcn/ui are configured)
+        *   `src/frontend/components/...` (All your shadcn/ui components)
+        *   `src/frontend/lib/api.ts`
+        * `src/frontend/components/project-details.tsx`
+        * `src/frontend/components/theme-provider.tsx`
+        * `src/frontend/components/theme-toggle.tsx`
+        * Make sure that the necessary files are added to the `src/frontend/app/(auth)/sign-in/[[...sign-in]]` and `src/frontend/app/(auth)/sign-up/[[...sign-up]]` folders.
+        *  **Key Change: `api.ts`:** Update `src/frontend/lib/api.ts` to use `NEXT_PUBLIC_API_URL`:
+            ```typescript
+            // src/frontend/lib/api.ts
+            import axios from 'axios';
+            import type { Project as ProjectSchema, ProjectCreate, ProjectStatus } from "../types";
+
+            const api = axios.create({
+                baseURL: process.env.NEXT_PUBLIC_API_URL, // Use the environment variable
+            });
+
+            export const projectsApi = {
+                create: async (data: ProjectCreate): Promise<ProjectSchema> => {
+                    const response = await api.post('/api/v1/projects/', data);
+                    return response.data;
+                },
+                listProjects: async (): Promise<ProjectSchema[]> => {
+                    const response = await api.get('/api/v1/projects/');
+                    return response.data;
+                },
+                getProject: async (projectId: string): Promise<ProjectSchema> => {
+                    const response = await api.get(`/api/v1/projects/${projectId}`);
+                    return response.data;
+                },
+                updateProject: async (projectId: string, data: { status: ProjectStatus }): Promise<ProjectSchema> => {
+                    const response = await api.patch(`/api/v1/projects/${projectId}`, data);
+                    return response.data;
+                },
+            };
+
+            export type { ProjectSchema, ProjectCreate, ProjectStatus };
+            ```
+3.  **Run Frontend Server (Local - M2 Max):**
+
+    *   **Start Next.js:** (Inside `src/frontend`)
+        ```bash
+        npm run dev
+        ```
+
+4. **Access Application (From M2 Pro):**
+
+ * Open your browser on the **M2 Pro** and go to `http://<M2_MAX_IP>:3000`, replacing `<M2_MAX_IP>` with the actual IP address or hostname of your M2 Max. You should also be able to access it via `http://localhost:3000` since you are port forwarding.
+
+**III. Testing**
+
+*   **Backend Tests:** Run frequently using `pytest src/backend/tests` (from within `src/backend`).
+*   **Frontend Tests:** Not included in v0.0, but add them as you build out the frontend.
+*   **Manual Testing:** Thoroughly test the application in your browser after each significant change.
+
+**IV. Version Control**
+
+*   **Commit Frequently:** Commit your code to Git regularly, with clear and descriptive commit messages.

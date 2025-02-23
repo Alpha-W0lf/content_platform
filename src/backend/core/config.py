@@ -8,10 +8,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Content Platform"
     API_VERSION: str = "v0.0"
     DATABASE_URL: str = Field(
-        default=(
-            "postgresql+asyncpg://user:password@localhost:5432/"
-            "content_platform?timezone=utc"
-        )
+        default="postgresql+asyncpg://tom:@127.0.0.1:5432/content_platform"
     )
     TEST_DATABASE_URL: str = Field(default="")
     REDIS_URL: Optional[str] = None
@@ -42,8 +39,10 @@ class Settings(BaseSettings):
                 return str(redis_url)
         return v or ""
 
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "extra": "allow",  # This will allow extra fields in the environment variables
+        "env_file": ".env",
+    }
 
 
 settings = Settings()
