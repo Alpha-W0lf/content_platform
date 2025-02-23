@@ -1,4 +1,34 @@
 [flake8]
+# Line length and basic rules
+max-line-length = 220
+
+# Explicitly list all errors to ignore
+ignore = 
+    # Allow module level imports not at top of file
+    E402,
+    # Line break before binary operator
+    W503,
+    # Line too long (we use B950 instead from flake8-bugbear)
+    E501,
+    # Multiple spaces before operator
+    E221,
+    # Multiple spaces after operator
+    E222,
+    # Multiple spaces after ':'
+    E241,
+    # Multiple spaces before ':'
+    E242,
+    # Whitespace before ':'
+    E203,
+    # Multiple spaces after ','
+    E241,
+    # Missing whitespace around operator
+    E225
+
+# Which errors to check for
+select = C,E,F,W,B,B950
+
+# Exclude patterns
 exclude =
     .git,
     __pycache__,
@@ -21,16 +51,7 @@ exclude =
     .pytest_cache,
     .mypy_cache
 
-# Recommended line length to match black's default
-max-line-length = 220
-
-# Ignore some common errors:
-# E203: Whitespace before ':' (conflicts with black)
-# W503: Line break before binary operator (conflicts with black)
-# E402: Module level import not at top of file
-extend-ignore = E203, W503, E402, E501, E261
-
-# Select specific error codes to enable
-select = C,E,F,W,B,B950
+# Make the tool verbose so we can debug any config issues
+verbose = 1
 
 dummy_setting = test

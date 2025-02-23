@@ -3,17 +3,17 @@ Pytest fixtures for backend tests.
 """
 
 from dotenv import load_dotenv
-
 import asyncio
 import logging
 import os
 
 load_dotenv()
 os.environ["REDIS_PASSWORD"] = os.environ.get("REDIS_PASSWORD", "testpassword")
-os.environ["REDIS_URL"] = "redis://:testpassword@redis:6379/0"
+os.environ["REDIS_URL"] = (
+    "redis://:testpassword@localhost:6379/0"  # Changed to localhost
+)
 os.environ["CELERY_BROKER_URL"] = os.environ["REDIS_URL"]
 os.environ["CELERY_RESULT_BACKEND"] = os.environ["REDIS_URL"]
-
 import pytest
 import pytest_asyncio
 from alembic import command
@@ -26,7 +26,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-
 from src.backend.core.config import settings
 from src.backend.core.database import get_db
 from src.backend.main import app
@@ -34,16 +33,21 @@ from src.backend.models import asset  # noqa: F401
 from src.backend.models import base
 from src.backend.models import project  # noqa: F401
 
-load_dotenv() # Load environment variables from .env file at the root of the project
-
+load_dotenv()
 logger = logging.getLogger(__name__)
+
+# Configure logging to be less verbose
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+logging.getLogger("alembic").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 logger.info(f"TEST_DATABASE_URL: {settings.TEST_DATABASE_URL}")
 if not settings.TEST_DATABASE_URL:
     raise ValueError("TEST_DATABASE_URL is not set in settings")
+
 test_engine: AsyncEngine = create_async_engine(
     settings.TEST_DATABASE_URL,
-    echo=True,
+    echo=False,  # Disabled SQL echo
     future=True,
 )
 
