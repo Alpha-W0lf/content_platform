@@ -1,7 +1,7 @@
 import sys
 import os
 import asyncio
-from pathlib import Path  # Import pathlib
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -10,18 +10,19 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 from alembic.runtime.migration import MigrationContext
 
-# ---  Correct Path Calculation (using pathlib) ---
+# --- Correct Path Calculation (using pathlib) ---
 # Get the absolute path to the current file (env.py)
 current_file = Path(__file__).resolve()
-# Get the parent directory (migrations), then its parent (backend), then its parent (src)
-src_path = current_file.parent.parent.parent
+# Get the project root directory, making sure we go up to
+# the level *above* 'src'
+project_root = current_file.parent.parent.parent.parent
 # Add the 'src' directory to sys.path
-sys.path.insert(0, str(src_path))
+sys.path.insert(0, str(project_root)) # This is changed!
 # --- End of Path Calculation ---
 
 # --- Imports after modifying sys.path ---
-from src.backend.core.config import settings  # Now this will work!
-from src.backend.models import Base  # And this!
+from src.backend.core.config import settings
+from src.backend.models import Base
 
 
 # --- Alembic Config ---
@@ -31,11 +32,13 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+
 def get_url() -> str:
     """Get the database URL based on the context."""
     if hasattr(config, "attributes") and config.attributes.get("db") == "test":
         return settings.TEST_DATABASE_URL
     return settings.DATABASE_URL
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
@@ -65,6 +68,7 @@ def do_run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
         context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
