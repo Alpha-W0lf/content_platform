@@ -9,10 +9,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Content Platform"
     API_VERSION: str = "v0.0"
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/content_platform"
+        default="postgresql+asyncpg://tom:password@localhost:5432/content_platform"
     )
     TEST_DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/test_content_platform"
+        default="postgresql+asyncpg://tom:password@localhost:5432/test_content_platform"
     )
     # No default for REDIS_PASSWORD. It MUST be in .env or explicitly set.
     REDIS_PASSWORD: Optional[str] = Field(None)

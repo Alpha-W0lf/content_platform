@@ -1,12 +1,15 @@
 # src/backend/celeryconfig.py
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 # Use localhost without authentication for testing.
 broker_url = "redis://localhost:6379/0"
 result_backend = "redis://localhost:6379/0"
 
 # Basic logging configuration (adjust as needed).
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # --- Rest of your Celery configuration --- (Keep other settings as before)

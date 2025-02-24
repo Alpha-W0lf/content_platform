@@ -26,7 +26,7 @@ def setup_task_logger(loglevel: int = logging.DEBUG) -> None:
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    handler = logging.FileHandler("/app/celery_logs/worker.log")
+    handler = logging.FileHandler("logs/celery/worker.log")
     handler.setLevel(loglevel)
     formatter = logging.Formatter(
         "[%(asctime)s: %(levelname)s/%(processName)s] " "[%(task_id)s] %(message)s"
