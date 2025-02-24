@@ -43,48 +43,58 @@ cleanup_redis() {
         done
     fi
     
+    # Check if Redis is responding
+    if ! redis-cli ping &>/dev/null; then
+        echo "⚠️ Warning: Redis is not responding. Skipping Redis cleanup."
+        return
+    fi
+    
     # Handle high memory fragmentation
     echo "2. Checking memory fragmentation..."
-    fragmentation=$(redis-cli info memory | grep "mem_fragmentation_ratio:" | cut -d: -f2)
+    fragmentation=$(redis-cli info memory 2>/dev/null | grep "mem_fragmentation_ratio:" | cut -d: -f2)
     if [ -n "$fragmentation" ] && (( $(echo "$fragmentation > 1.5" | bc -l) )); then
-        echo "High memory fragmentation detected ($fragmentation). Running aggressive cleanup..."
-        redis-cli memory purge
-        redis-cli config set activedefrag yes
-        redis-cli config set active-defrag-threshold-lower 10
-        redis-cli config set active-defrag-threshold-upper 100
-    fi
-    
-    # Kill idle connections (over 5 minutes)
-    echo "3. Checking for idle Redis connections..."
-    redis-cli client list | awk -F'[ =]' '/idle/ && $6 > 300 {print $2}' | while read -r client_id; do
-        echo "Killing idle client: $client_id"
-        redis-cli client kill id "$client_id"
-    done
-    
-    # Check memory fragmentation and flush if necessary
-    echo "4. Checking memory fragmentation..."
-    fragmentation=$(redis-cli info memory | grep "mem_fragmentation_ratio:" | cut -d: -f2)
-    if (( $(echo "$fragmentation > 1.5" | bc -l) )); then
-        echo "High memory fragmentation detected ($fragmentation). Running memory cleanup..."
-        redis-cli memory purge
-    fi
-    
-    # Clear all blocked/waiting clients
-    echo "5. Clearing blocked/waiting clients..."
-    redis-cli client list | grep -E "blocked|waiting" | cut -d' ' -f2 | while read -r client_id; do
-        echo "Killing blocked/waiting client: $client_id"
-        redis-cli client kill id "$client_id"
-    done
-
-    # Identify and clean up key space waste
-    echo "6. Cleaning up key space..."
-    redis-cli memory stats | grep -E "keys|overhead"
-    redis-cli --scan --pattern "*" | while read -r key; do
-        ttl=$(redis-cli ttl "$key")
-        if [ "$ttl" -eq -1 ]; then  # Keys without TTL
-            redis-cli expire "$key" 3600  # Set 1 hour expiry
+        echo "High memory fragmentation detected ($fragmentation). Running memory purge..."
+        redis-cli memory purge || echo "‼️ Memory purge not supported or failed"
+        
+        # Try to enable defragmentation only if supported
+        if redis-cli config set activedefrag yes &>/dev/null; then
+            echo "Active defragmentation enabled"
+            redis-cli config set active-defrag-threshold-lower 10
+            redis-cli config set active-defrag-threshold-upper 100
+        else
+            echo "Note: Active defragmentation not supported on this Redis instance"
         fi
-    done
+    fi
+    
+    # Kill idle connections (over 5 minutes) with error handling
+    echo "3. Checking for idle Redis connections..."
+    redis-cli client list 2>/dev/null | while IFS= read -r line; do
+        if [[ $line =~ age=([0-9]+).*idle=([0-9]+) ]] && [ "${BASH_REMATCH[2]}" -gt 300 ]; then
+            client_id=$(echo "$line" | awk -F'[ =]' '{print $2}')
+            echo "Killing idle client: $client_id"
+            redis-cli client kill id "$client_id" 2>/dev/null || echo "‼️ Failed to kill client $client_id"
+        fi
+    done || echo "‼️ Warning: Could not list Redis clients"
+    
+    # Clear all blocked/waiting clients with error handling
+    echo "4. Clearing blocked/waiting clients..."
+    redis-cli client list 2>/dev/null | grep -E "blocked|waiting" | while IFS= read -r line; do
+        if [[ $line =~ id=([^ ]+) ]]; then
+            client_id="${BASH_REMATCH[1]}"
+            echo "Killing blocked/waiting client: $client_id"
+            redis-cli client kill id "$client_id" 2>/dev/null || echo "‼️ Failed to kill client $client_id"
+        fi
+    done || echo "‼️ Warning: Could not list Redis clients"
+
+    # Identify and clean up key space waste with error handling
+    echo "5. Cleaning up key space..."
+    redis-cli memory stats || echo "Memory stats not available"
+    redis-cli --scan --pattern "*" 2>/dev/null | while read -r key; do
+        ttl=$(redis-cli ttl "$key" 2>/dev/null)
+        if [ "$ttl" = "-1" ]; then  # Keys without TTL
+            redis-cli expire "$key" 3600 2>/dev/null || echo "‼️ Failed to set TTL for key: $key"
+        fi
+    done || echo "‼️ Warning: Could not scan Redis keys"
 }
 
 # Function to clean up PostgreSQL resources
