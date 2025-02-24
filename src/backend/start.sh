@@ -14,11 +14,27 @@ PROJECT_ROOT="$(cd ../.. && pwd)"
 # Create logs directory if it doesn't exist
 mkdir -p "logs/backend"
 mkdir -p "logs/celery"
+mkdir -p "logs/redis"
 
 # Run cleanup script first
 ./cleanup.sh
 
 echo "👷‍♂️🏗️ Starting all services..."
+
+# Start Redis server
+echo "Starting Redis server..."
+redis-server --port 6379 --daemonize yes --logfile logs/redis/redis.log || {
+    echo "‼️ Failed to start Redis server"
+    exit 1
+}
+
+# Wait for Redis to be ready
+echo "⏳ Waiting for Redis..."
+until redis-cli ping &>/dev/null; do
+    echo "⚠️ Redis is unavailable - sleeping"
+    sleep 1
+done
+echo "✅ Redis is ready!"
 
 # Wait for database to be ready
 echo "⏳ Waiting for database..."
