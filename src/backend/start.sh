@@ -18,7 +18,7 @@ mkdir -p "logs/celery"
 # Run cleanup script first
 ./cleanup.sh
 
-echo "👷🏽‍♂️ Starting all services..."
+echo "👷‍♂️🏗️ Starting all services..."
 
 # Wait for database to be ready
 echo "⏳ Waiting for database..."
