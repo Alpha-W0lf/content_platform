@@ -36,14 +36,16 @@ echo "Detected machine type: $MACHINE_TYPE"
 
 # Set the API URL based on machine type
 if [ "$MACHINE_TYPE" = "M2_MAX" ]; then
-    # Running on the server machine, use localhost
+    # Running on the M2 Max, use localhost for API
     API_URL="http://localhost:8000"
-    echo "Running client on SERVER machine (M2 Max 💻⚡️🔥) - using localhost for API"
+    echo "Running frontend on M2 Max 💻⚡️🔥 - using localhost for API"
     echo "Switch to M2 Pro machine to distribute load a little more efficiently 😉"
+    echo "API URL: $API_URL (local)"
 elif [ "$MACHINE_TYPE" = "M2_PRO" ]; then
-    # Running on the client machine, use the M2 Max's IP
+    # Running on the M2 Pro, connect to M2 Max's API
     API_URL="http://192.168.1.167:8000"
-    echo "Running client on CLIENT machine (M2 Pro 💻🛰️) (Preferred 👍) - using remote server at $API_URL"
+    echo "Running frontend on M2 Pro 💻🛰️ (Preferred 👍) - using remote server at"
+    echo "API URL: $API_URL (remote)"
 else
     echo "⚠️ Could not detect machine type. Please specify the API URL manually."
     read -p "Enter API URL (default: http://192.168.1.167:8000): " user_input
@@ -74,7 +76,7 @@ sleep 3
 if ps -p $NEXT_PID > /dev/null; then
     echo "✅✅ Next.js development server started successfully ✅✅ (PID: $NEXT_PID)"
     echo "Logs available at: logs/frontend/runtime_logs/server.log"
-    echo "Access the application at: 🖥️ http://localhost:3000"
+    echo "Access the application at: 🖥️ http://localhost:3000 (running on this machine)"
 else
     echo "‼️ Error: Next.js development server failed to start"
     cat logs/frontend/runtime_logs/server.log

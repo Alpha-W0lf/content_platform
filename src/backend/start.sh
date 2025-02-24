@@ -46,20 +46,21 @@ echo "✅ Database is ready!"
 
 # Print Postgres version and server info
 echo "Checking Postgres version and connection info..."
-psql -h localhost -U tom -d content_platform -c "SELECT version();"
+psql -h localhost -U tom -d content_platform -P pager=off -c "SELECT version();"
 
 # Check authentication method
 echo "Checking authentication configuration..."
-psql -h localhost -U tom -d content_platform -c "SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'tom';"
+psql -h localhost -U tom -d content_platform -P pager=off -c "SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'tom';"
 
 # Check current user permissions
 echo "Checking user permissions..."
-psql -h localhost -U tom -d content_platform -c "\du"
+psql -h localhost -U tom -d content_platform -P pager=off -c "\du"
 
 # Run migrations from project root where alembic.ini is located
 echo "Running database migrations..."
 cd "$PROJECT_ROOT"
 echo "Running migrations from $(pwd)"
+export PYTHONPATH=$PROJECT_ROOT:$PYTHONPATH
 alembic upgrade head
 
 # Change back to backend directory
