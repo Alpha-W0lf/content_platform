@@ -9,7 +9,7 @@ from src.backend.models.project import Project
 
 
 @pytest.mark.asyncio
-async def test_create_project(client: AsyncClient, db_session: AsyncSession):
+async def test_create_project(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test successful project creation"""
     data = ProjectCreate(
         topic="Test Topic", notes="Test Notes", name="Test Name"
@@ -32,36 +32,31 @@ async def test_create_project(client: AsyncClient, db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_create_project_missing_topic(client, db_session): # Removed type hints
+async def test_create_project_missing_topic(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test project creation with missing required field"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     data = {"notes": "Test Notes"}
     response = await client.post("/api/v1/projects/", json=data)
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_create_project_invalid_topic(client, db_session): # Removed type hints
+async def test_create_project_invalid_topic(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test project creation with invalid topic type"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     data = {"topic": 123, "notes": "Test Notes"}  # Invalid topic type
     response = await client.post("/api/v1/projects/", json=data)
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_get_project_status(client, db_session): # Removed type hints
+async def test_get_project_status(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test getting project status"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     # Create a project first, directly in the DB
     project = Project(
         id=uuid4(), topic="Test Topic", notes="Test Notes", status="CREATED"
     )
     db_session.add(project)
     await db_session.commit()
+    await db_session.refresh(project)
 
     # Get its status via the API
     status_response = await client.get(f"/api/v1/projects/{project.id}/status")
@@ -69,12 +64,9 @@ async def test_get_project_status(client, db_session): # Removed type hints
     status = status_response.json()
     assert status["status"] == "CREATED"
 
-
 @pytest.mark.asyncio
-async def test_get_project_status_not_found(client, db_session): # Removed type hints, though db_session not used
+async def test_get_project_status_not_found(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test getting status of non-existent project"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     non_existent_id = str(uuid4())
     response = await client.get(f"/api/v1/projects/{non_existent_id}/status")
     assert response.status_code == 404
@@ -82,16 +74,15 @@ async def test_get_project_status_not_found(client, db_session): # Removed type 
 
 
 @pytest.mark.asyncio
-async def test_get_project(client, db_session): # Removed type hints
+async def test_get_project(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test getting a project by ID"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     # Create a project first, directly in the DB
     project = Project(
         id=uuid4(), topic="Test Topic", notes="Test Notes", status="CREATED"
     )
     db_session.add(project)
     await db_session.commit()
+    await db_session.refresh(project)
 
     # Get the project via the API
     get_response = await client.get(f"/api/v1/projects/{project.id}")
@@ -104,10 +95,8 @@ async def test_get_project(client, db_session): # Removed type hints
 
 
 @pytest.mark.asyncio
-async def test_get_project_not_found(client, db_session): # Removed type hints, though db_session not used
+async def test_get_project_not_found(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test getting a non-existent project by ID"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     non_existent_id = str(uuid4())
     response = await client.get(f"/api/v1/projects/{non_existent_id}")
     assert response.status_code == 404
@@ -115,20 +104,16 @@ async def test_get_project_not_found(client, db_session): # Removed type hints, 
 
 
 @pytest.mark.asyncio
-async def test_get_project_invalid_id(client, db_session): # Removed type hints, though db_session not used
+async def test_get_project_invalid_id(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test getting a project with an invalid ID format"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     invalid_id = "not-a-uuid"
     response = await client.get(f"/api/v1/projects/{invalid_id}")
     assert response.status_code == 422  # Expecting a validation error
 
 
 @pytest.mark.asyncio
-async def test_list_projects(client, db_session): # Removed type hints
+async def test_list_projects(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test getting a list of projects"""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     # Create a few projects directly in the DB
     project1 = Project(id=uuid4(), topic="Topic 1", notes="Notes 1", status="CREATED")
     project2 = Project(
@@ -151,10 +136,8 @@ async def test_list_projects(client, db_session): # Removed type hints
 
 
 @pytest.mark.asyncio
-async def test_update_project(client, db_session): # Removed type hints
+async def test_update_project(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test updating a project's fields."""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     project_id = uuid4()
     # Create project
     project = Project(
@@ -183,10 +166,8 @@ async def test_update_project(client, db_session): # Removed type hints
 
 
 @pytest.mark.asyncio
-async def test_update_project_status(client, db_session): # Removed type hints
+async def test_update_project_status(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test updating a project's status."""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     project_id = uuid4()
     # Create project
     project = Project(id=project_id, topic="Status Update Test", status="CREATED")
@@ -216,10 +197,8 @@ async def test_update_project_status(client, db_session): # Removed type hints
 
 
 @pytest.mark.asyncio
-async def test_update_project_not_found(client, db_session): # Removed type hints, though db_session not used
+async def test_update_project_not_found(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test updating a non-existent project."""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     non_existent_id = str(uuid4())
     update_data = {"topic": "New Topic"}
     response = await client.patch(
@@ -230,10 +209,8 @@ async def test_update_project_not_found(client, db_session): # Removed type hint
 
 
 @pytest.mark.asyncio
-async def test_update_project_invalid_status(client, db_session): # Removed type hints
+async def test_update_project_invalid_status(client: AsyncClient, db_session: AsyncSession, setup_database):
     """Test updating a project with an invalid status."""
-    client = await client # Await client fixture
-    db_session = await db_session # Await db_session fixture
     project_id = uuid4()
 
     project = Project(

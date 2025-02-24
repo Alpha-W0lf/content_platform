@@ -1,320 +1,320 @@
-services:
-  api:
-    build:
-      context: .
-      dockerfile: .docker/Dockerfile.api
-    ports:
-      - "0.0.0.0:8000:8000" # Bind to all interfaces
-      - "0.0.0.0:5678:5678" # Debug port
-    volumes:
-      - ./src/backend:/app/src/backend
-      - ./alembic.ini:/app/alembic.ini
-    depends_on:
-      - postgres
-      - redis
-    env_file:
-      - .env
-    environment:
-      - PYDEVD_DISABLE_FILE_VALIDATION=1 # Keep this, it's specific to debugging
-    networks:
-      - content-platform
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    user: "501:20"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "api"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
+# services:
+#   api:
+#     build:
+#       context: .
+#       dockerfile: .docker/Dockerfile.api
+#     ports:
+#       - "0.0.0.0:8000:8000" # Bind to all interfaces
+#       - "0.0.0.0:5678:5678" # Debug port
+#     volumes:
+#       - ./src/backend:/app/src/backend
+#       - ./alembic.ini:/app/alembic.ini
+#     depends_on:
+#       - postgres
+#       - redis
+#     env_file:
+#       - .env
+#     environment:
+#       - PYDEVD_DISABLE_FILE_VALIDATION=1 # Keep this, it's specific to debugging
+#     networks:
+#       - content-platform
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 40s
+#     restart: unless-stopped
+#     user: "501:20"
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "api"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
 
-  celery_worker:
-    build:
-      context: .
-      dockerfile: .docker/Dockerfile.celery
-    volumes:
-      - ./src/backend:/app/src/backend
-      - ./logs/celery:/app/celery_logs
-    depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - PYDEVD_DISABLE_FILE_VALIDATION=1
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_USER=default
-      - CELERY_BROKER_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://default:${REDIS_PASSWORD}@redis:6379/0
-      # Redis debugging
-      - REDIS_DEBUG=1
-      - REDIS_LOG_LEVEL=debug
-      # Celery specific debug settings
-      - CELERY_LOG_LEVEL=DEBUG
-      - CELERY_WORKER_REDIRECT_STDOUTS=true
-      - CELERY_WORKER_REDIRECT_STDOUTS_LEVEL=DEBUG
-      - CELERY_BROKER_CONNECTION_RETRY=true
-      - CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP=true
-      - CELERY_BROKER_CONNECTION_MAX_RETRIES=10
-      - CELERY_BROKER_CONNECTION_TIMEOUT=30
-      - CELERY_BROKER_HEARTBEAT=10
-      # Redis connection debugging
-    command: >
-      bash -c "celery -A src.backend.tasks worker 
-      --loglevel=DEBUG 
-      --logfile=/app/celery_logs/worker.log 
-      --pidfile=/app/celery_logs/worker.pid
-      --events 
-      --pool=prefork 
-      --concurrency=12 
-      -E"
-    networks:
-      - content-platform
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "celery -A src.backend.tasks inspect ping -d celery@$$HOSTNAME || exit 1",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "celery"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
+#   celery_worker:
+#     build:
+#       context: .
+#       dockerfile: .docker/Dockerfile.celery
+#     volumes:
+#       - ./src/backend:/app/src/backend
+#       - ./logs/celery:/app/celery_logs
+#     depends_on:
+#       redis:
+#         condition: service_healthy
+#       postgres:
+#         condition: service_healthy
+#     env_file:
+#       - .env
+#     environment:
+#       - PYDEVD_DISABLE_FILE_VALIDATION=1
+#       - REDIS_PASSWORD=${REDIS_PASSWORD}
+#       - REDIS_USER=default
+#       - CELERY_BROKER_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+#       - CELERY_RESULT_BACKEND=redis://default:${REDIS_PASSWORD}@redis:6379/0
+#       # Redis debugging
+#       - REDIS_DEBUG=1
+#       - REDIS_LOG_LEVEL=debug
+#       # Celery specific debug settings
+#       - CELERY_LOG_LEVEL=DEBUG
+#       - CELERY_WORKER_REDIRECT_STDOUTS=true
+#       - CELERY_WORKER_REDIRECT_STDOUTS_LEVEL=DEBUG
+#       - CELERY_BROKER_CONNECTION_RETRY=true
+#       - CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP=true
+#       - CELERY_BROKER_CONNECTION_MAX_RETRIES=10
+#       - CELERY_BROKER_CONNECTION_TIMEOUT=30
+#       - CELERY_BROKER_HEARTBEAT=10
+#       # Redis connection debugging
+#     command: >
+#       bash -c "celery -A src.backend.tasks worker 
+#       --loglevel=DEBUG 
+#       --logfile=/app/celery_logs/worker.log 
+#       --pidfile=/app/celery_logs/worker.pid
+#       --events 
+#       --pool=prefork 
+#       --concurrency=12 
+#       -E"
+#     networks:
+#       - content-platform
+#     healthcheck:
+#       test:
+#         [
+#           "CMD-SHELL",
+#           "celery -A src.backend.tasks inspect ping -d celery@$$HOSTNAME || exit 1",
+#         ]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 40s
+#     restart: unless-stopped
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "celery"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
 
-  postgres:
-    image: postgres:15
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: content_platform
-      PGUSER: user
-      POSTGRES_MULTIPLE_DATABASES: content_platform,test_content_platform,grafana
-    command:
-      - "postgres"
-      - "-c"
-      - "hba_file=/etc/postgresql/pg_hba.conf"
-      - "-c"
-      - "shared_preload_libraries=pg_stat_statements"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/00-init-databases.sh
-      - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
-      - ./config/postgres/postgres-exporter:/usr/local/bin/postgres-exporter
-    networks:
-      - content-platform
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d content_platform"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "postgres"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
+#   postgres:
+#     image: postgres:15
+#     ports:
+#       - "5432:5432"
+#     environment:
+#       POSTGRES_USER: user
+#       POSTGRES_PASSWORD: password
+#       POSTGRES_DB: content_platform
+#       PGUSER: user
+#       POSTGRES_MULTIPLE_DATABASES: content_platform,test_content_platform,grafana
+#     command:
+#       - "postgres"
+#       - "-c"
+#       - "hba_file=/etc/postgresql/pg_hba.conf"
+#       - "-c"
+#       - "shared_preload_libraries=pg_stat_statements"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#       - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/00-init-databases.sh
+#       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
+#       - ./config/postgres/postgres-exporter:/usr/local/bin/postgres-exporter
+#     networks:
+#       - content-platform
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U user -d content_platform"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 30s
+#     restart: unless-stopped
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "postgres"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
 
-  redis:
-    build:
-      context: .
-      dockerfile: .docker/Dockerfile.redis
-    image: redis/redis-stack-server:7.4.0-v3
-    ports:
-      - "6379:6379"
-      - "8001:8001"
-    volumes:
-      - redis_data:/data
-      - ./logs/redis:/var/log/redis:rw
-      - ./logs/redis/container_logs:/container_logs
-      - type: bind
-        source: ./config/redis/redis.conf
-        target: /redis.conf
-        bind:
-          create_host_path: true
-    networks:
-      - content-platform
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_USER=default
-      - REDIS_LOGLEVEL=debug
-      - REDIS_LOG_DIR=/var/log/redis
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "redis"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
+#   redis:
+#     build:
+#       context: .
+#       dockerfile: .docker/Dockerfile.redis
+#     image: redis/redis-stack-server:7.4.0-v3
+#     ports:
+#       - "6379:6379"
+#       - "8001:8001"
+#     volumes:
+#       - redis_data:/data
+#       - ./logs/redis:/var/log/redis:rw
+#       - ./logs/redis/container_logs:/container_logs
+#       - type: bind
+#         source: ./config/redis/redis.conf
+#         target: /redis.conf
+#         bind:
+#           create_host_path: true
+#     networks:
+#       - content-platform
+#     environment:
+#       - REDIS_PASSWORD=${REDIS_PASSWORD}
+#       - REDIS_USER=default
+#       - REDIS_LOGLEVEL=debug
+#       - REDIS_LOG_DIR=/var/log/redis
+#     healthcheck:
+#       test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 30s
+#     restart: unless-stopped
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "redis"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
+#     ulimits:
+#       nofile:
+#         soft: 65536
+#         hard: 65536
 
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "0.0.0.0:9090:9090"
-    volumes:
-      - ./config/prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
-    networks:
-      - content-platform
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "prometheus"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
+#   prometheus:
+#     image: prom/prometheus:latest
+#     ports:
+#       - "0.0.0.0:9090:9090"
+#     volumes:
+#       - ./config/prometheus:/etc/prometheus
+#       - prometheus_data:/prometheus
+#     networks:
+#       - content-platform
+#     healthcheck:
+#       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 40s
+#     restart: unless-stopped
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "prometheus"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
 
-  grafana:
-    image: grafana/grafana:11.5.1
-    ports:
-      - "0.0.0.0:3001:3000"
-    volumes:
-      - ./config/grafana:/etc/grafana/provisioning
-      - ./config/grafana/grafana-init.sh:/grafana-init.sh
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_DATABASE_TYPE=postgres
-      - GF_DATABASE_HOST=postgres:5432
-      - GF_DATABASE_NAME=grafana
-      - GF_DATABASE_USER=user
-      - GF_DATABASE_PASSWORD=password
-      - GF_DATABASE_MAX_OPEN_CONN=300
-      - GF_DATABASE_MAX_IDLE_CONN=100
-      - GF_DATABASE_CONN_MAX_LIFETIME=14400
-      - GF_DATABASE_SSL_MODE=disable
-    entrypoint: ["/bin/bash", "/grafana-init.sh"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - content-platform
-    healthcheck:
-      test:
-        ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "grafana"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
-    user: "472:472"
+#   grafana:
+#     image: grafana/grafana:11.5.1
+#     ports:
+#       - "0.0.0.0:3001:3000"
+#     volumes:
+#       - ./config/grafana:/etc/grafana/provisioning
+#       - ./config/grafana/grafana-init.sh:/grafana-init.sh
+#       - grafana_data:/var/lib/grafana
+#     environment:
+#       - GF_DATABASE_TYPE=postgres
+#       - GF_DATABASE_HOST=postgres:5432
+#       - GF_DATABASE_NAME=grafana
+#       - GF_DATABASE_USER=user
+#       - GF_DATABASE_PASSWORD=password
+#       - GF_DATABASE_MAX_OPEN_CONN=300
+#       - GF_DATABASE_MAX_IDLE_CONN=100
+#       - GF_DATABASE_CONN_MAX_LIFETIME=14400
+#       - GF_DATABASE_SSL_MODE=disable
+#     entrypoint: ["/bin/bash", "/grafana-init.sh"]
+#     depends_on:
+#       postgres:
+#         condition: service_healthy
+#     networks:
+#       - content-platform
+#     healthcheck:
+#       test:
+#         ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 40s
+#     restart: unless-stopped
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "grafana"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
+#     user: "472:472"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: .docker/Dockerfile.frontend
-      args:
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
-        NEXT_PUBLIC_CLERK_SIGN_IN_URL: "${NEXT_PUBLIC_CLERK_SIGN_IN_URL}"
-        NEXT_PUBLIC_CLERK_SIGN_UP_URL: "${NEXT_PUBLIC_CLERK_SIGN_UP_URL}"
-        NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: "${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}"
-        NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: "${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}"
-        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL}"
-    ports:
-      - "0.0.0.0:3000:3000"
-    env_file:
-      - .env
-    environment:
-      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
-      - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
-      - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
-      - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-    volumes:
-      - ./logs/frontend/build_logs:/app/build_logs
-      - ./logs/frontend/runtime_logs:/app/runtime_logs
-    depends_on:
-      - api
-    networks:
-      - content-platform
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-        tag: "{{.Name}}"
-        labels: "frontend"
-        env: "prod"
-        mode: "non-blocking"
-        max-buffer-size: "4m"
-    user: "node"
+#   frontend:
+#     build:
+#       context: .
+#       dockerfile: .docker/Dockerfile.frontend
+#       args:
+#         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}"
+#         NEXT_PUBLIC_CLERK_SIGN_IN_URL: "${NEXT_PUBLIC_CLERK_SIGN_IN_URL}"
+#         NEXT_PUBLIC_CLERK_SIGN_UP_URL: "${NEXT_PUBLIC_CLERK_SIGN_UP_URL}"
+#         NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: "${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}"
+#         NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: "${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}"
+#         NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL}"
+#     ports:
+#       - "0.0.0.0:3000:3000"
+#     env_file:
+#       - .env
+#     environment:
+#       - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+#       - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+#       - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+#       - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+#       - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+#       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+#     volumes:
+#       - ./logs/frontend/build_logs:/app/build_logs
+#       - ./logs/frontend/runtime_logs:/app/runtime_logs
+#     depends_on:
+#       - api
+#     networks:
+#       - content-platform
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 40s
+#     restart: unless-stopped
+#     logging:
+#       driver: "json-file"
+#       options:
+#         max-size: "50m"
+#         max-file: "10"
+#         tag: "{{.Name}}"
+#         labels: "frontend"
+#         env: "prod"
+#         mode: "non-blocking"
+#         max-buffer-size: "4m"
+#     user: "node"
 
-networks:
-  content-platform:
-    driver: bridge
+# networks:
+#   content-platform:
+#     driver: bridge
 
-volumes:
-  postgres_data:
-  redis_data:
-  prometheus_data:
-  grafana_data:
+# volumes:
+#   postgres_data:
+#   redis_data:
+#   prometheus_data:
+#   grafana_data:

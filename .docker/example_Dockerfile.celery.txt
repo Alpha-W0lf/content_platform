@@ -1,0 +1,103 @@
+# FROM python:3.11-slim
+
+# # Create logs directory
+# RUN mkdir -p /app/celery_logs
+
+# # Install system dependencies and debugging tools
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     build-essential \
+#     libpq-dev \
+#     curl \
+#     procps \
+#     sysstat \
+#     tree \
+#     htop \
+#     net-tools \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Debug: Print system information
+# RUN echo "=== System Information ===" | tee /app/celery_logs/01_system_info.log && \
+#     echo "Python version: $(python --version)" | tee -a /app/celery_logs/01_system_info.log && \
+#     echo "Pip version: $(pip --version)" | tee -a /app/celery_logs/01_system_info.log && \
+#     echo "Operating system: $(uname -a)" | tee -a /app/celery_logs/01_system_info.log && \
+#     echo "\nCPU Info:" | tee -a /app/celery_logs/01_system_info.log && \
+#     lscpu | grep -E '^Thread|^Core|^Socket|^CPU\(' | tee -a /app/celery_logs/01_system_info.log && \
+#     echo "\nMemory Info:" | tee -a /app/celery_logs/01_system_info.log && \
+#     free -h | tee -a /app/celery_logs/01_system_info.log
+
+# # Create non-root user
+# RUN addgroup --system --gid 1001 celerygroup && \
+#     adduser --system --uid 1001 celeryuser --ingroup celerygroup
+
+# WORKDIR /app
+
+# # Debug: Print workspace setup
+# RUN echo "\n=== Workspace Setup ===" | tee /app/celery_logs/02_workspace_setup.log && \
+#     echo "Current working directory: $(pwd)" | tee -a /app/celery_logs/02_workspace_setup.log && \
+#     echo "Directory structure:" | tee -a /app/celery_logs/02_workspace_setup.log && \
+#     tree -a /app | tee -a /app/celery_logs/02_workspace_setup.log
+
+# # Copy requirements first for better caching
+# COPY src/backend/requirements.txt /app/requirements.txt
+
+# # Debug: Print requirements
+# RUN echo "\n=== Python Requirements ===" | tee /app/celery_logs/03_requirements.log && \
+#     cat requirements.txt | tee -a /app/celery_logs/03_requirements.log
+
+# # Install Python dependencies with detailed logging
+# RUN echo "\n=== Installing Dependencies ===" | tee /app/celery_logs/04_pip_install.log && \
+#     pip install --no-cache-dir -r requirements.txt 2>&1 | tee -a /app/celery_logs/04_pip_install.log && \
+#     echo "\nInstalled Packages:" | tee -a /app/celery_logs/04_pip_install.log && \
+#     pip list | tee -a /app/celery_logs/04_pip_install.log
+
+# # Copy application code
+# COPY src/backend/ /app/src/backend/
+
+# # Debug: Print application structure
+# RUN echo "\n=== Application Structure ===" | tee /app/celery_logs/05_app_structure.log && \
+#     tree -a /app/src/backend | tee -a /app/celery_logs/05_app_structure.log
+
+# # Set permissions
+# RUN chown -R celeryuser:celerygroup /app
+
+# # Debug: Print permissions
+# RUN echo "\n=== File Permissions ===" | tee /app/celery_logs/06_permissions.log && \
+#     ls -la /app | tee -a /app/celery_logs/06_permissions.log && \
+#     echo "\nUser/Group Info:" | tee -a /app/celery_logs/06_permissions.log && \
+#     id celeryuser | tee -a /app/celery_logs/06_permissions.log
+
+# # Switch to non-root user
+# USER celeryuser
+
+# # Set Python path and other env vars
+# ENV PYTHONPATH=/app \
+#     PYTHONUNBUFFERED=1
+
+# # Debug: Print Python environment
+# RUN echo "\n=== Python Environment ===" | tee /app/celery_logs/07_python_env.log && \
+#     python -c "import sys; print('Python Path:', sys.path)" | tee -a /app/celery_logs/07_python_env.log && \
+#     echo "\nEnvironment Variables:" | tee -a /app/celery_logs/07_python_env.log && \
+#     env | sort | tee -a /app/celery_logs/07_python_env.log
+
+# # Debug: Print Docker Compose environment variables
+# RUN echo "\n=== Docker Compose Env Vars ===" | tee /app/celery_logs/08_docker_compose_env.log && \
+#     echo "REDIS_PASSWORD: $REDIS_PASSWORD" | tee -a /app/celery_logs/08_docker_compose_env.log && \
+#     echo "CELERY_BROKER_URL: $CELERY_BROKER_URL" | tee -a /app/celery_logs/08_docker_compose_env.log && \
+#     echo "CELERY_RESULT_BACKEND: $CELERY_RESULT_BACKEND" | tee -a /app/celery_logs/08_docker_compose_env.log
+
+# # Enhanced healthcheck with logging
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+#     CMD celery -A src.backend.tasks inspect ping -quiet 2>&1 | tee -a /app/celery_logs/healthcheck.log || exit 1
+
+# # Volume configuration for logs
+# VOLUME ["/app/celery_logs"]
+
+# # Start Celery worker with enhanced logging
+# CMD echo "\n=== Starting Celery Worker ===" | tee -a /app/celery_logs/worker.log && \
+#     date | tee -a /app/celery_logs/worker.log && \
+#     echo "\nSystem Status:" | tee -a /app/celery_logs/worker.log && \
+#     free -h | tee -a /app/celery_logs/worker.log && \
+#     echo "\nEnvironment:" | tee -a /app/celery_logs/worker.log && \
+#     env | sort | tee -a /app/celery_logs/worker.log && \
+#     echo "\nStarting worker..." | tee -a /app/celery_logs/worker.log && \
+#     celery -A src.backend.tasks worker --loglevel=info 2>&1 | tee -a /app/celery_logs/worker.log
